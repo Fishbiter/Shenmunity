@@ -1,0 +1,59 @@
+###
+# Unity folders and files
+###
+[Aa]ssets/AssetStoreTools*
+[Bb]uilds/
+[Ll]ibrary/
+[Ll]ocal[Cc]ache/
+[Oo]bj/
+[Tt]emp/
+[Uu]nityGenerated/
+Saves
+# file on crash reports
+sysinfo.txt
+# Unity3D generated meta files
+*.pidb.meta
+
+*.bak
+
+###
+# VS/MD solution and project files
+###
+.vs/
+[Ee]xportedObj/
+*.booproj
+*.csproj
+*.sln
+*.suo
+*.svd
+*.unityproj
+*.user
+*.userprefs
+*.pidb
+.DS_Store
+
+###
+# OS generated
+###
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Icon?
+ehthumbs.db
+Thumbs.db
+Thumbs.db.meta
+
+####
+# SteamUpload
+####
+SteamUpload/output
+SteamUpload/builder/.crash
+SteamUpload/builder/logs
+SteamUpload/builder/config
+SteamUpload/builder/appcache
+SteamUpload/builder/userdata
+SteamUpload/builder/dumps
+SteamUpload/builder/steamapps
+SteamUpload/scripts/app_build_*

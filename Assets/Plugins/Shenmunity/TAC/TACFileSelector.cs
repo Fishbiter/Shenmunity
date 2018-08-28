@@ -10,6 +10,7 @@ namespace Shenmunity
         ShenmueAssetRef m_ref;
         static Vector2 m_scroll;
         static bool m_showNamed;
+        static string m_search;
 
         static public void SelectFile(TACReader.FileType type, ShenmueAssetRef outRef)
         {
@@ -52,12 +53,17 @@ namespace Shenmunity
         void OnGUI()
         {
             m_showNamed = GUILayout.Toggle(m_showNamed, "Only show named");
+            m_search = GUILayout.TextField(m_search);
 
             m_scroll = GUILayout.BeginScrollView(m_scroll);
+            bool none = true;
 
             foreach(var r in m_list)
             {
                 if (m_showNamed && string.IsNullOrEmpty(r.m_name))
+                    continue;
+
+                if (!string.IsNullOrEmpty(m_search) && (string.IsNullOrEmpty(r.m_name) || r.m_name.IndexOf(m_search) == -1))
                     continue;
 
                 if (GUILayout.Button(string.Format("{0} {1} ({2}kb)", r.m_path, r.m_name, r.m_length/1000)))
@@ -66,7 +72,10 @@ namespace Shenmunity
                     m_ref.OnChange();
                     Close();
                 }
+                none = false;
             }
+            if (none)
+                GUILayout.Label(string.Format("'{0}' not found", m_search));
 
             GUILayout.EndScrollView();
         }

@@ -146,13 +146,22 @@ namespace Shenmunity
                 mustBe16 = br.ReadInt16();
                 stripType = br.ReadInt16();
 
-                if (stripType != 0x26)
+                switch (stripType)
                 {
-                    p3 = br.ReadInt16();
-                    p4 = br.ReadInt16();
-                    p5 = br.ReadInt16();
-                    p6 = br.ReadInt16();
+                    case 0x2e:
+                    case 0x0a:
+                        p3 = br.ReadInt16();
+                        p4 = br.ReadInt16();
+                        p5 = br.ReadInt16();
+                        p6 = br.ReadInt16();
+                        break;
+                    case 0x26:
+                        break;
+                    default:
+                        Debug.LogWarningFormat("Unknown strip type {0}", stripType);
+                        break;
                 }
+                
                 p7 = br.ReadInt16();
                 p8 = br.ReadInt16();
                 p9 = br.ReadInt16();
@@ -336,8 +345,9 @@ namespace Shenmunity
                 for (int v = 0; v < numberVerts; v++)
                 {
                     var fv = new FaceVert();
-                    fv.m_vertIndex = m_reader.ReadInt16();
-                    if(fv.m_vertIndex < 0)
+                    int rawVert = m_reader.ReadInt16();
+                    fv.m_vertIndex = rawVert;
+                    if (fv.m_vertIndex < 0)
                     {
                         fv.m_vertIndex = -fv.m_vertIndex;
                         face.m_flipped = true; //this is a guess! Maybe double sided?
@@ -441,9 +451,11 @@ namespace Shenmunity
 
             private void Unswizzle()
             {
-                int[] swizzleMap = new int[width];
+                int twiddleSqr = (int)(width < height ? width : height);
 
-                for (int i = 0; i < width; i++)
+                int[] swizzleMap = new int[twiddleSqr];
+
+                for (int i = 0; i < twiddleSqr; i++)
                 {
                     swizzleMap[i] = 0;
 
@@ -455,18 +467,27 @@ namespace Shenmunity
 
                 var newTexels = new Color[width * height];
 
-                for (int y = 0; y < height; y++)
+                int squareIndex = 0;
+
+                for (int sqy = 0; sqy < height; sqy += twiddleSqr)
                 {
-                    for (int x = 0; x < width; x++)
+                    for (int sqx = 0; sqx < width; sqx += twiddleSqr)
                     {
-                        int index = (swizzleMap[x] << 1) | swizzleMap[y];
+                        for (int y = 0; y < twiddleSqr; y++)
+                        {
+                            for (int x = 0; x < twiddleSqr; x++)
+                            {
+                                int index = squareIndex + ((swizzleMap[x] << 1) | swizzleMap[y]);
 
-                        long destinationIndex = (y * width) + x;
+                                long destinationIndex = squareIndex + (y * twiddleSqr) + x;
 
-                        newTexels[destinationIndex] = texels[index];
+                                newTexels[destinationIndex] = texels[index];
+                            }
+                        }
+                        squareIndex += twiddleSqr * twiddleSqr;
                     }
                 }
-
+                
                 texels = newTexels;
             }
 

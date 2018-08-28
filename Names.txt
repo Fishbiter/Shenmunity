@@ -10,10 +10,12 @@ Shenmue/disk_5b69b0ee/9C75C93C HongKongFlier
 Shenmue/disk_5b69b0ee/C04F7244 Yamanose
 Shenmue/disk_5b69b0ee/2D485480 HarborWater?
 Shenmue/disk_5b69b0ee/FFD24437 Warehouse
+Shenmue/disk_5b69b0ee/83B92E25 YoungRyu
 Shenmue/disk_5b69b0ee/8F827444 Matchbox
 Shenmue/disk_5b69b0ee/D2F726B1 HarborEntrance
 Shenmue/disk_5b69b0ee/301C2A6E TravelAgent
 Shenmue/disk_5b69b0ee/61413F28 DojoInterior
+Shenmue/disk_5b69b0ee/AE07760B Ship
 Shenmue/disk_5b69b0ee/0180E74B TomatoDoors
 Shenmue/disk_5b69b0ee/8C6217B7 PizzaSlice
 Shenmue/disk_5b69b0ee/FE05890B TrayWithCups

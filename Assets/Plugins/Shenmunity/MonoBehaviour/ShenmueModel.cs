@@ -11,11 +11,10 @@ namespace Shenmunity
     public class ShenmueModel : ShenmueAssetRef
     {
         public bool m_allowEdit = false;
-        Transform m_model;
-
+        
         private void Awake()
         {
-            LoadModel();
+            //LoadModel();
         }
 
         public override void OnChange()
@@ -26,10 +25,15 @@ namespace Shenmunity
 
         void LoadModel()
         {
-            if(m_model)
+            var children = new Transform[transform.childCount];
+            for(int i = 0; i < children.Length; i++)
             {
-                DestroyImmediate(m_model.gameObject);
-                m_model = null;
+                children[i] = transform.GetChild(i);
+            }
+
+            foreach (var child in children)
+            {
+                DestroyImmediate(child.gameObject);
             }
 
             if (string.IsNullOrEmpty(m_path))
@@ -78,12 +82,6 @@ namespace Shenmunity
                 }
 
                 nodes[id] = CreateNode(model, model.m_nodes[id], mats, parent);
-                if(!m_model)
-                {
-                    m_model = nodes[id];
-                }
-
-                
             }
         }
 
@@ -143,6 +141,11 @@ namespace Shenmunity
                 textures[face.m_texture] = true;
                 foreach (var fv in face.m_faceVerts)
                 {
+                    if(fv.m_vertIndex < 0 || fv.m_vertIndex >= node.m_pos.Count)
+                    {
+                        Debug.LogWarningFormat("Invalid vert index {0}", fv.m_vertIndex);
+                    }
+
                     verts[v] = node.m_pos[fv.m_vertIndex];
                     norms[v] = node.m_pos[fv.m_vertIndex];
                     uv.Add(fv.m_uv);
@@ -173,7 +176,7 @@ namespace Shenmunity
                         for (int i = 0; i < face.m_faceVerts.Count - 2; i++)
                         {
                             inds.Add(baseVert + i);
-                            if ((i & 1) != 0)
+                            if ((i & 1) != (face.m_flipped ? 1 : 0))
                             {
                                 inds.Add(baseVert + i + 1);
                                 inds.Add(baseVert + i + 2);
@@ -197,7 +200,10 @@ namespace Shenmunity
             var myMats = new Material[texIds.Length];
             for(int i = 0; i < texIds.Length; i++)
             {
-                myMats[i] = mats[texIds[i]];
+                if (texIds[i] < mats.Length)
+                {
+                    myMats[i] = mats[texIds[i]];
+                }
             }
 
             mr.materials = myMats;

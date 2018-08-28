@@ -18,6 +18,7 @@ namespace Shenmunity
         public class Face
         {
             public int m_texture;
+            public bool m_flipped;
             public List<FaceVert> m_faceVerts = new List<FaceVert>();
         }
 
@@ -25,6 +26,7 @@ namespace Shenmunity
         {
             public int m_vertIndex;
             public Vector2 m_uv;
+            public Vector2 m_col;
         }
 
         public class Texture
@@ -73,9 +75,9 @@ namespace Shenmunity
             {
                 nodeId = br.ReadUInt32();
                 meshData = br.ReadUInt32();
-                rotX = br.ReadSingle();
-                rotY = br.ReadSingle();
-                rotZ = br.ReadSingle();
+                rotX = 360.0f * br.ReadInt32() / 0xffff;
+                rotY = 360.0f * br.ReadInt32() / 0xffff;
+                rotZ = 360.0f * br.ReadInt32() / 0xffff;
                 scaleX = br.ReadSingle();
                 scaleY = br.ReadSingle();
                 scaleZ = br.ReadSingle();
@@ -112,41 +114,45 @@ namespace Shenmunity
         public List<Vector3> m_norm = new List<Vector3>();
         }
 
-        class ObjectFooter
+        class MeshHeader
         {
-            public ObjectFooter(BinaryReader br)
+            public MeshHeader(BinaryReader br)
             {
-                empty = br.ReadUInt32();
-                endOfPreviousFaces = br.ReadUInt32();
+                polyType = br.ReadUInt32();
+                vertexOffset = br.ReadUInt32();
                 verticesNumber = br.ReadInt32();
-                endOfPreviousFooter = br.ReadUInt32();
+                meshOffset = br.ReadUInt32();
                 f1 = br.ReadSingle();
                 f2 = br.ReadSingle();
                 f3 = br.ReadSingle();
                 f4 = br.ReadSingle();
             }
 
-            uint empty;
-            public uint endOfPreviousFaces;
+            uint polyType;
+            public uint vertexOffset;
             public int verticesNumber;
-            public uint endOfPreviousFooter;
+            public uint meshOffset;
             public float f1;
             public float f2;
             public float f3;
             public float f4;
         }
 
-        class FaceHeader
+        class StripHeader
         {
-            public FaceHeader(BinaryReader br)
+            public StripHeader(BinaryReader br)
             {
                 p0 = br.ReadInt16();
                 mustBe16 = br.ReadInt16();
-                p2 = br.ReadInt16();
-                p3 = br.ReadInt16();
-                p4 = br.ReadInt16();
-                p5 = br.ReadInt16();
-                p6 = br.ReadInt16();
+                stripType = br.ReadInt16();
+
+                if (stripType != 0x26)
+                {
+                    p3 = br.ReadInt16();
+                    p4 = br.ReadInt16();
+                    p5 = br.ReadInt16();
+                    p6 = br.ReadInt16();
+                }
                 p7 = br.ReadInt16();
                 p8 = br.ReadInt16();
                 p9 = br.ReadInt16();
@@ -154,18 +160,18 @@ namespace Shenmunity
                 textureNumber = br.ReadInt16();
                 p12 = br.ReadInt16();
                 p13 = br.ReadInt16();
-                p14 = br.ReadInt16();
+                stripFormat = br.ReadInt16();
                 blockSize = br.ReadInt16();
-                p16 = br.ReadInt16();
+                numberStrips = br.ReadInt16();
             }
 
             public short p0;
             public short mustBe16;
-            public short p2;
-            public short p3;
-            public short p4;
-            public short p5;
-            public short p6;
+            public short stripType;
+            public short p3;//only in UV strips (maybe UV mode?)
+            public short p4;//only in UV strips (maybe UV mode?)
+            public short p5;//only in UV strips (maybe UV mode?)
+            public short p6;//only in UV strips (maybe UV mode?)
             public short p7;
             public short p8;
             public short p9;
@@ -173,9 +179,9 @@ namespace Shenmunity
             public short textureNumber;
             public short p12;
             public short p13;
-            public short p14;
+            public short stripFormat;
             public short blockSize;
-            public short p16;
+            public short numberStrips;
         }
 
         public Model(string path)
@@ -210,10 +216,38 @@ namespace Shenmunity
             if (obj.meshData != 0)
             {
                 Seek(obj.meshData, SeekOrigin.Begin);
-                var footer = new ObjectFooter(m_reader);
-                Seek(footer.endOfPreviousFooter + 16, SeekOrigin.Begin);
-                ReadFaces(obj, footer.endOfPreviousFaces);
-                Seek(footer.endOfPreviousFaces, SeekOrigin.Begin);
+                var footer = new MeshHeader(m_reader);
+                Seek(footer.meshOffset, SeekOrigin.Begin);
+
+                uint magic;
+                while ((magic = m_reader.ReadUInt32()) != 0xffff8000)
+                {
+                    bool err = false;
+                    switch (magic)
+                    {
+                        case 0x00100002:
+                        case 0x00100003:
+                        case 0x00100004:
+                            Seek(-4, SeekOrigin.Current);
+                            ReadFaces(obj, footer.verticesNumber);
+                            break;
+                        case 0x0008000e:
+                            //this is "MeshData" I don't know what it's for
+                            m_reader.ReadUInt32();
+                            m_reader.ReadUInt32();
+                            m_reader.ReadUInt32();
+                            break;
+                        default:
+                            Debug.LogWarningFormat("Unknown mesh type {0}", magic);
+                            err = true;
+                            break;
+                    }
+
+                    if (err)
+                        break;
+                }
+
+                Seek(footer.vertexOffset, SeekOrigin.Begin);
                 ReadVertices(obj, footer.verticesNumber);
             }
             m_nodes[pos] = obj;
@@ -281,35 +315,54 @@ namespace Shenmunity
             }
         }
 
-        void ReadFaces(Node node, UInt32 end)
+        void ReadFaces(Node node, int vertexCount)
         {
-            while(GetPos() < end)
+            var stripHeader = new StripHeader(m_reader);
+
+            long end = GetPos() + stripHeader.blockSize - 2;
+
+            if (stripHeader.mustBe16 != 0x10)
+                return;
+
+            for(int i = 0; i < stripHeader.numberStrips; i++)
             {
-                var faceHeader = new FaceHeader(m_reader);
-                if (faceHeader.mustBe16 != 0x10)
-                    break;
+                var face = new Face();
+                face.m_texture = stripHeader.textureNumber;
 
-                long blockEnd = GetPos() + faceHeader.blockSize - 4;
+                node.m_faces.Add(face);
 
-                while (GetPos() < blockEnd)
+                var numberVerts = 0xffff - m_reader.ReadUInt16() + 1;
+                for (int v = 0; v < numberVerts; v++)
                 {
-                    var face = new Face();
-                    face.m_texture = faceHeader.textureNumber;
-
-                    node.m_faces.Add(face);
-
-                    var data = m_reader.ReadUInt16();
-                    for (int i = 0; i < 0xffff - data + 1; i++)
+                    var fv = new FaceVert();
+                    fv.m_vertIndex = m_reader.ReadInt16();
+                    if(fv.m_vertIndex < 0)
                     {
-                        var fv = new FaceVert();
-                        fv.m_vertIndex = m_reader.ReadInt16();
+                        fv.m_vertIndex = -fv.m_vertIndex;
+                        face.m_flipped = true; //this is a guess! Maybe double sided?
+                    }
+                    if(fv.m_vertIndex >= vertexCount)
+                    {
+                        Debug.LogWarningFormat("Invalid vertex");
+                        fv.m_vertIndex = Mathf.Min(vertexCount - 1, fv.m_vertIndex);
+                    }
+
+                    if(stripHeader.stripFormat >= 0x11)
+                    {
                         fv.m_uv.x = (float)(m_reader.ReadInt16() & 0x3ff) / 0x3ff;
                         fv.m_uv.y = (float)(m_reader.ReadInt16() & 0x3ff) / 0x3ff;
-                        face.m_faceVerts.Add(fv);
-                        node.m_totalFaceVerts++;
                     }
+                    if (stripHeader.stripFormat >= 0x1c)
+                    {
+                        fv.m_col.x = m_reader.ReadInt16();
+                        fv.m_col.y = m_reader.ReadInt16();
+                    }
+                    face.m_faceVerts.Add(fv);
+                    node.m_totalFaceVerts++;
                 }
             }
+
+            Seek(end, SeekOrigin.Begin);
         }
 
         class PVRT

@@ -1,12 +1,14 @@
 Shenmue/disk_5b69b0ee/6D70CBC4 Umbrella
+Shenmue/disk_5b69b0ee/B2CF736F Can
 Shenmue/disk_5b69b0ee/408868EE Sakaragaoka
 Shenmue/disk_5b69b0ee/31D46ED4 Dojo
+Shenmue/disk_5b69b0ee/6C0B2E98 Book(invalid verts)
 Shenmue/disk_5b69b0ee/9C75C93C HongKongFlier
 Shenmue/disk_5b69b0ee/C04F7244 Yamanose
 Shenmue/disk_5b69b0ee/2D485480 HarborWater?
 Shenmue/disk_5b69b0ee/FFD24437 Warehouse
 Shenmue/disk_5b69b0ee/8F827444 Matchbox
-Shenmue/disk_5b69b0ee/D2F726B1 CarPark
+Shenmue/disk_5b69b0ee/D2F726B1 HarborEntrance
 Shenmue/disk_5b69b0ee/301C2A6E TravelAgent
 Shenmue/disk_5b69b0ee/61413F28 DojoInterior
 Shenmue/disk_5b69b0ee/0180E74B TomatoDoors

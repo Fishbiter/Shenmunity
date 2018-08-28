@@ -213,6 +213,7 @@ namespace Shenmunity
             Seek(pos, SeekOrigin.Begin);
 
             Node obj = ReadObjectHeader();
+
             if (obj.meshData != 0)
             {
                 Seek(obj.meshData, SeekOrigin.Begin);
@@ -397,14 +398,15 @@ namespace Shenmunity
                     {
                         texels[i] = ReadColor(br);
                     }
+                    Unswizzle();
                 }
             }
 
             void DecodeVQ(byte[] source, Color[] palette)
             {
-                int[] swizzleMap = new int[width];
+                int[] swizzleMap = new int[width/2];
 
-                for (int i = 0; i < width; i++)
+                for (int i = 0; i < width/2; i++)
                 {
                     swizzleMap[i] = 0;
 
@@ -453,23 +455,15 @@ namespace Shenmunity
 
                 var newTexels = new Color[width * height];
 
-                for (int y = 0; y < height; y+=2)
+                for (int y = 0; y < height; y++)
                 {
-                    for (int x = 0; x < width; x+=2)
+                    for (int x = 0; x < width; x++)
                     {
-                        int index = (swizzleMap[x >> 1] << 1) | swizzleMap[y >> 1];
+                        int index = (swizzleMap[x] << 1) | swizzleMap[y];
 
-                        for (int x2 = 0; x2 < 2; x2++)
-                        {
-                            for (int y2 = 0; y2 < 2; y2++)
-                            {
-                                long destinationIndex = ((y + y2) * width) + (x + x2);
+                        long destinationIndex = (y * width) + x;
 
-                                newTexels[destinationIndex] = texels[index];
-
-                                index++;
-                            }
-                        }
+                        newTexels[destinationIndex] = texels[index];
                     }
                 }
 

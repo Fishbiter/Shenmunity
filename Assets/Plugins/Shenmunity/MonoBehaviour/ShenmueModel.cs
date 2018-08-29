@@ -88,15 +88,14 @@ namespace Shenmunity
                 }
 
                 nodes[id] = CreateNode(node, parent);
-                nodes[id].name = id.ToString();
-                numberVerts += node.m_totalFaceVerts;
+                numberVerts += node.m_totalStripVerts;
                 bones[index++] = nodes[id];
             }
 
             Matrix4x4[] bindPoses = new Matrix4x4[bones.Length];
             for(int i = 0; i < bones.Length; i++)
             {
-                bindPoses[i] = Matrix4x4.identity;// bones[i].worldToLocalMatrix * transform.localToWorldMatrix;
+                bindPoses[i] = Matrix4x4.identity;
             }
             
             var mr = GetComponent<SkinnedMeshRenderer>();
@@ -268,7 +267,7 @@ namespace Shenmunity
 
         Transform CreateNode(Model.Node node, Transform parent)
         {
-            var go = new GameObject("Shenmunity Bone");
+            var go = new GameObject(string.Format("Node {0} {1}", node.m_treeDepth, node.m_childIndex));
 
             go.hideFlags = HideFlags.DontSave;
             if (!m_allowEdit)

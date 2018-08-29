@@ -107,12 +107,16 @@ namespace Shenmunity
             uint unknown5;
             public uint nextObject;
 
-                    public int m_totalFaceVerts = 0;
+            public int m_totalStripVerts = 0; //derived (not read)
 
-        public List<Strip> m_faces = new List<Strip>();
+            public List<Strip> m_faces = new List<Strip>();
         
-        public List<Vector3> m_pos = new List<Vector3>();
-        public List<Vector3> m_norm = new List<Vector3>();
+            public List<Vector3> m_pos = new List<Vector3>();
+            public List<Vector3> m_norm = new List<Vector3>();
+
+            public List<Node> m_children = new List<Node>(); //derived (not read)
+            public int m_treeDepth; //derived (not read)
+            public int m_childIndex; //derived (not read)
         }
 
         class MeshHeader
@@ -263,18 +267,27 @@ namespace Shenmunity
             }
             m_nodes[pos] = obj;
             m_nodeInLoadOrder.Add(obj);
+            if (obj.up != 0)
+            {
+                var n = GetNode(obj.up);
+                n.m_children.Add(obj);
+                obj.m_treeDepth = n.m_treeDepth + 1;
+                obj.m_childIndex = n.m_children.Count;
+            }
             if (obj.child != 0)
             {
                 var n = GetNode(obj.child);
-                n.up = pos;
+                if (n.up == 0)
+                {
+                    n.up = pos;
+                    obj.m_children.Add(n);
+                    n.m_treeDepth = obj.m_treeDepth + 1;
+                    n.m_childIndex = obj.m_children.Count;
+                }
             }
             if (obj.next != 0)
             {
                 GetNode(obj.next);
-             }
-            if (obj.up != 0)
-            {
-                GetNode(obj.up);
             }
 
             return obj;
@@ -350,16 +363,6 @@ namespace Shenmunity
                     var fv = new StripVert();
                     int rawVert = m_reader.ReadInt16();
                     fv.m_vertIndex = rawVert;
-                    //if (fv.m_vertIndex < 0)
-                    //{
-                    //    fv.m_vertIndex = -fv.m_vertIndex;
-                    //    face.m_flipped = true; //this is a guess! Maybe double sided?
-                    //}
-                    //if(fv.m_vertIndex >= vertexCount)
-                    //{
-                    //    Debug.LogWarningFormat("Invalid vertex");
-                    //    //fv.m_vertIndex = Mathf.Min(vertexCount - 1, fv.m_vertIndex);
-                    //}
 
                     if(stripHeader.stripFormat >= 0x11)
                     {
@@ -372,7 +375,7 @@ namespace Shenmunity
                         fv.m_col.y = m_reader.ReadInt16();
                     }
                     face.m_faceVerts.Add(fv);
-                    node.m_totalFaceVerts++;
+                    node.m_totalStripVerts++;
                 }
             }
 

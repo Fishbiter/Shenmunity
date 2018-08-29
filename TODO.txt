@@ -1,0 +1,3 @@
+Preserve nodes (can we find sensible names)
+Fix UV stretching (e.g. Concrete model)
+Collapse verts

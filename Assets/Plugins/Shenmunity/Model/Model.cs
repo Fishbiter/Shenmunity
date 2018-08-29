@@ -163,7 +163,7 @@ namespace Shenmunity
                         break;
                 }
                 
-                p7 = br.ReadInt16();
+                polyMode = br.ReadInt16();
                 p8 = br.ReadInt16();
                 p9 = br.ReadInt16();
                 p10 = br.ReadInt16();
@@ -183,7 +183,7 @@ namespace Shenmunity
             public short p4;//only in UV strips (maybe UV mode?)
             public short p5;//only in UV strips (maybe UV mode?)
             public short p6;//only in UV strips (maybe UV mode?)
-            public short p7;
+            public short polyMode;
             public short p8;
             public short p9;
             public short p10;
@@ -345,7 +345,7 @@ namespace Shenmunity
             {
                 var face = new Strip();
                 face.m_texture = stripHeader.textureNumber;
-                face.m_mirrorUVs = (stripHeader.p7 & 0x4) != 0;
+                face.m_mirrorUVs = (stripHeader.polyMode & 0x4) != 0;
 
                 node.m_strips.Add(face);
 

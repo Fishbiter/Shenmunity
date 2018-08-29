@@ -138,9 +138,15 @@ namespace Shenmunity
                     SetMeshToGameObject(m_bones[boneIndex], mesh, meshMats, bounds);
                     boneIndex++;
                 }
+                PurgeMesh(transform);
             }
             else
             {
+                foreach(var bone in m_bones)
+                {
+                    PurgeMesh(bone);
+                }
+
                 Bounds bounds;
                 Material[] meshMats;
                 var mesh = CreateMeshForNodes(transform, model, model.m_nodeInLoadOrder.ToArray(), m_bones, nodes, out bounds, mats, out meshMats);
@@ -149,7 +155,7 @@ namespace Shenmunity
             }
         }
 
-        void SetMeshToGameObject(Transform root, Mesh mesh, Material[] mats, Bounds bounds)
+        void PurgeMesh(Transform root)
         {
             var destroy = new List<GameObject>();
             for (int i = 0; i < root.childCount; i++)
@@ -158,10 +164,15 @@ namespace Shenmunity
                 if (child.GetComponent<MeshRenderer>() || child.GetComponent<SkinnedMeshRenderer>())
                     destroy.Add(child.gameObject);
             }
-            foreach(var go in destroy)
+            foreach (var go in destroy)
             {
                 DestroyImmediate(go);
             }
+        }
+
+        void SetMeshToGameObject(Transform root, Mesh mesh, Material[] mats, Bounds bounds)
+        {
+            PurgeMesh(root);
 
             var meshNode = new GameObject("Mesh");
             var meshT = meshNode.transform;

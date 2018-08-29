@@ -1,4 +1,2 @@
 Separate meshes option
-Fix UV stretching (e.g. Concrete model)
-Flip world
 Keyframed anim (e.g. birds)

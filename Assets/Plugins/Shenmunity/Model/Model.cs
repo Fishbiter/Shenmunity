@@ -16,14 +16,14 @@ namespace Shenmunity
 
         public List<Texture> m_textures = new List<Texture>();
 
-        public class Face
+        public class Strip
         {
             public int m_texture;
             public bool m_flipped;
-            public List<FaceVert> m_faceVerts = new List<FaceVert>();
+            public List<StripVert> m_faceVerts = new List<StripVert>();
         }
 
-        public class FaceVert
+        public class StripVert
         {
             public int m_vertIndex;
             public Vector2 m_uv;
@@ -109,7 +109,7 @@ namespace Shenmunity
 
                     public int m_totalFaceVerts = 0;
 
-        public List<Face> m_faces = new List<Face>();
+        public List<Strip> m_faces = new List<Strip>();
         
         public List<Vector3> m_pos = new List<Vector3>();
         public List<Vector3> m_norm = new List<Vector3>();
@@ -339,7 +339,7 @@ namespace Shenmunity
 
             for(int i = 0; i < stripHeader.numberStrips; i++)
             {
-                var face = new Face();
+                var face = new Strip();
                 face.m_texture = stripHeader.textureNumber;
 
                 node.m_faces.Add(face);
@@ -347,7 +347,7 @@ namespace Shenmunity
                 var numberVerts = 0xffff - m_reader.ReadUInt16() + 1;
                 for (int v = 0; v < numberVerts; v++)
                 {
-                    var fv = new FaceVert();
+                    var fv = new StripVert();
                     int rawVert = m_reader.ReadInt16();
                     fv.m_vertIndex = rawVert;
                     //if (fv.m_vertIndex < 0)

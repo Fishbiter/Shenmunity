@@ -109,9 +109,12 @@ namespace Shenmunity
             var verts = new Vector3[numberVerts];
             var norms = new Vector3[numberVerts];
             var boneWeights = new BoneWeight[numberVerts];
-            var uv = new List<Vector2>();
+            var uvs = new List<Vector2>();
 
-            int v = 0;
+            var vertLookup = new Dictionary<Vector3, List<int>>();
+            var bounds = new Bounds();
+            
+            int numberVertsEmitted = 0;
             int nodeIndex = 0;
             int sourceBaseVert = 0;
             foreach (var node in model.m_nodeInLoadOrder)
@@ -120,6 +123,10 @@ namespace Shenmunity
                 {
                     foreach (var fv in face.m_faceVerts)
                     {
+                        Vector3 pos = Vector3.zero;
+                        Vector3 norm = Vector3.zero;
+                        int boneIndex = nodeIndex;
+
                         if (fv.m_vertIndex < 0)
                         {
                             if (node.up != 0)
@@ -129,36 +136,41 @@ namespace Shenmunity
 
                                 if(id >= 0 && id < parent.m_pos.Count)
                                 {
-                                    verts[v] = parent.m_pos[id];
-                                    norms[v] = parent.m_norm[id];
-                                    boneWeights[v].boneIndex0 = Array.IndexOf(bones, nodes[node.up]);
+                                    pos = parent.m_pos[id];
+                                    norm = parent.m_norm[id];
+                                    boneIndex = Array.IndexOf(bones, nodes[node.up]);
                                 }
                             }
-
-
-                            //int boneIndex = 0;
-                            //GetOtherNodeVert(fv.m_vertIndex + sourceBaseVert, model, out verts[v], out norms[v], out boneIndex);
-                            //boneWeights[v].boneIndex0 = boneIndex;
                         }
                         else
                         {
-                            verts[v] = node.m_pos[fv.m_vertIndex];
-                            norms[v] = node.m_norm[fv.m_vertIndex];
-                            boneWeights[v].boneIndex0 = nodeIndex;
+                            pos = node.m_pos[fv.m_vertIndex];
+                            norm = node.m_norm[fv.m_vertIndex];
+                            boneIndex = nodeIndex;
                         }
-                        boneWeights[v].weight0 = 1.0f;
-                        uv.Add(fv.m_uv);
-                        v++;
+
+                        int oldVertsEmitted = numberVertsEmitted;
+                        fv.m_vertIndex = AddVert(vertLookup, pos, norm, fv.m_uv, boneIndex, verts, norms, uvs, boneWeights, ref numberVertsEmitted);
+                        if(numberVertsEmitted > oldVertsEmitted)
+                        {
+                            var local = transform.InverseTransformPoint(bones[boneIndex].TransformPoint(pos));
+                            bounds.Encapsulate(local);
+                        }
+
                     }
                 }
                 nodeIndex++;
                 sourceBaseVert += node.m_pos.Count;
             }
 
+            Array.Resize(ref verts, numberVertsEmitted);
+            Array.Resize(ref norms, numberVertsEmitted);
+            Array.Resize(ref boneWeights, numberVertsEmitted);
+
             mesh.vertices = verts;
             mesh.normals = norms;
             mesh.boneWeights = boneWeights;
-            mesh.SetUVs(0, uv);
+            mesh.SetUVs(0, uvs);
 
             mesh.subMeshCount = model.m_textures.Count;
 
@@ -177,16 +189,16 @@ namespace Shenmunity
                         {
                             for (int i = 0; i < face.m_faceVerts.Count - 2; i++)
                             {
-                                inds.Add(baseVert + i);
+                                inds.Add(face.m_faceVerts[i].m_vertIndex);
                                 if ((i & 1) != (face.m_flipped ? 1 : 0))
                                 {
-                                    inds.Add(baseVert + i + 1);
-                                    inds.Add(baseVert + i + 2);
+                                    inds.Add(face.m_faceVerts[i + 1].m_vertIndex);
+                                    inds.Add(face.m_faceVerts[i + 2].m_vertIndex);
                                 }
                                 else
                                 {
-                                    inds.Add(baseVert + i + 2);
-                                    inds.Add(baseVert + i + 1);
+                                    inds.Add(face.m_faceVerts[i + 2].m_vertIndex);
+                                    inds.Add(face.m_faceVerts[i + 1].m_vertIndex);
                                 }
                             }
                         }
@@ -202,30 +214,38 @@ namespace Shenmunity
             mr.rootBone = bones[0];
             mr.materials = mats;
             mr.bones = bones;
+            mr.localBounds = bounds;
         }
 
-        void GetOtherNodeVert(int absVertId, Model model, out Vector3 pos, out Vector3 norm, out int boneIndex)
+        int AddVert(Dictionary<Vector3, List<int>> lookup, Vector3 pos, Vector3 norm, Vector2 uv, int boneIndex, Vector3[] poss, Vector3[] norms, List<Vector2> uvs, BoneWeight[] boneIndices, ref int count)
         {
-            int nodeIndex = 0;
-            int baseVert = 0;
-            foreach (var node in model.m_nodeInLoadOrder)
+            if (lookup.ContainsKey(pos))
             {
-                int vertId = absVertId - baseVert;
-                if (vertId >= 0 && vertId < node.m_pos.Count)
+                foreach (int v in lookup[pos])
                 {
-                    pos = node.m_pos[vertId];
-                    norm = node.m_norm[vertId];
-                    boneIndex = nodeIndex;
-                    return;
+                    if (norm == norms[v] && uv == uvs[v] && boneIndex == boneIndices[v].boneIndex0)
+                    {
+                        return v;
+                    }
                 }
-                baseVert += node.m_pos.Count;
-                
-                nodeIndex++;
             }
 
-            pos = Vector3.zero ;
-            norm = Vector3.one;
-            boneIndex = 0;
+            if(!lookup.ContainsKey(pos))
+            {
+                lookup[pos] = new List<int>();
+            }
+
+            poss[count] = pos;
+            norms[count] = norm;
+            uvs.Add(uv);
+            boneIndices[count].boneIndex0 = boneIndex;
+            boneIndices[count].weight0 = 1.0f;
+
+            lookup[pos].Add(count);
+
+            count++;
+
+            return count - 1;
         }
 
         void SetTransparent(Material material)

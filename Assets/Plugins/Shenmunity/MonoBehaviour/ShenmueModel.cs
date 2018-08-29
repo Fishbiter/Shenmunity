@@ -60,29 +60,38 @@ namespace Shenmunity
 
             var nodes = new Dictionary<uint, Transform>();
 
-            Material[] mats = new Material[model.m_textures.Count];
+            Material[] mats = new Material[model.m_textures.Count * 2];
 
-            for (int i = 0; i < model.m_textures.Count; i++)
+            for (int mirror = 0; mirror < 2; mirror++)
             {
-                var srcTex = model.m_textures[i];
-                var tex = new Texture2D((int)srcTex.m_width, (int)srcTex.m_height);
-                tex.SetPixels(srcTex.m_texels);
-                tex.Apply();
-
-                var mat = new Material(Shader.Find("Standard"));
-                switch (srcTex.m_type)
+                for (int i = 0; i < model.m_textures.Count; i++)
                 {
-                    case Model.PVRType.ARGB4444:
-                        SetTransparent(mat);
-                        break;
-                    case Model.PVRType.ARGB1555:
-                        SetCutout(mat);
-                        break;
-                }
-                mat.SetFloat("_Glossiness", 0);
+                    var srcTex = model.m_textures[i];
+                    var tex = new Texture2D((int)srcTex.m_width, (int)srcTex.m_height);
+                    tex.SetPixels(srcTex.m_texels);
+                    tex.Apply();
 
-                mat.SetTexture("_MainTex", tex);
-                mats[i] = mat;
+                    if(mirror != 0)
+                    {
+                        tex.wrapModeU = TextureWrapMode.Mirror;
+                        tex.wrapModeV = TextureWrapMode.Mirror;
+                    }
+
+                    var mat = new Material(Shader.Find("Standard"));
+                    switch (srcTex.m_type)
+                    {
+                        case Model.PVRType.ARGB4444:
+                            SetTransparent(mat);
+                            break;
+                        case Model.PVRType.ARGB1555:
+                            SetCutout(mat);
+                            break;
+                    }
+                    mat.SetFloat("_Glossiness", 0);
+
+                    mat.SetTexture("_MainTex", tex);
+                    mats[i + mirror * model.m_textures.Count] = mat;
+                }
             }
 
             m_bones = new Transform[model.m_nodes.Count];
@@ -107,6 +116,14 @@ namespace Shenmunity
                 nodes[id] = CreateBone(id, node, parent, existingNodes);
                 numberVerts += node.m_totalStripVerts;
                 m_bones[index++] = nodes[id];
+
+                foreach(var strip in node.m_strips)
+                {
+                    if(strip.m_mirrorUVs)
+                    {
+                        strip.m_texture += model.m_textures.Count;
+                    }
+                }
             }
 
             if (m_meshMode == MeshMode.Individual)
@@ -304,7 +321,7 @@ namespace Shenmunity
                             for (int i = 0; i < strip.m_stripVerts.Count - 2; i++)
                             {
                                 inds.Add(strip.m_stripVerts[i].m_vertIndex);
-                                if ((i & 1) != (strip.m_flipped ? 0 : 1))
+                                if ((i & 1) != 1)
                                 {
                                     inds.Add(strip.m_stripVerts[i + 1].m_vertIndex);
                                     inds.Add(strip.m_stripVerts[i + 2].m_vertIndex);

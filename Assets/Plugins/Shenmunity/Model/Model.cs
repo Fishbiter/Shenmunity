@@ -19,7 +19,7 @@ namespace Shenmunity
         public class Strip
         {
             public int m_texture;
-            public bool m_flipped;
+            public bool m_mirrorUVs;
             public List<StripVert> m_stripVerts = new List<StripVert>();
         }
 
@@ -345,6 +345,7 @@ namespace Shenmunity
             {
                 var face = new Strip();
                 face.m_texture = stripHeader.textureNumber;
+                face.m_mirrorUVs = (stripHeader.p7 & 0x4) != 0;
 
                 node.m_strips.Add(face);
 

@@ -113,10 +113,6 @@ namespace Shenmunity
         
             public List<Vector3> m_pos = new List<Vector3>();
             public List<Vector3> m_norm = new List<Vector3>();
-
-            public List<Node> m_children = new List<Node>(); //derived (not read)
-            public int m_treeDepth; //derived (not read)
-            public int m_childIndex; //derived (not read)
         }
 
         class MeshHeader
@@ -269,10 +265,7 @@ namespace Shenmunity
             m_nodeInLoadOrder.Add(obj);
             if (obj.up != 0)
             {
-                var n = GetNode(obj.up);
-                n.m_children.Add(obj);
-                obj.m_treeDepth = n.m_treeDepth + 1;
-                obj.m_childIndex = n.m_children.Count;
+                GetNode(obj.up);
             }
             if (obj.child != 0)
             {
@@ -280,9 +273,6 @@ namespace Shenmunity
                 if (n.up == 0)
                 {
                     n.up = pos;
-                    obj.m_children.Add(n);
-                    n.m_treeDepth = obj.m_treeDepth + 1;
-                    n.m_childIndex = obj.m_children.Count;
                 }
             }
             if (obj.next != 0)

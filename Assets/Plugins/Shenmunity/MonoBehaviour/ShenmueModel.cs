@@ -12,7 +12,9 @@ namespace Shenmunity
     public class ShenmueModel : ShenmueAssetRef
     {
         public bool m_allowEdit = false;
-        
+        string m_pathCreated;
+        Transform m_mesh;
+
         private void Awake()
         {
             //LoadModel();
@@ -26,16 +28,20 @@ namespace Shenmunity
 
         void LoadModel()
         {
-            var children = new Transform[transform.childCount];
-            for(int i = 0; i < children.Length; i++)
+            if (m_pathCreated != m_path)
             {
-                children[i] = transform.GetChild(i);
-            }
+                var children = new Transform[transform.childCount];
+                for (int i = 0; i < children.Length; i++)
+                {
+                    children[i] = transform.GetChild(i);
+                }
 
-            foreach (var child in children)
-            {
-                DestroyImmediate(child.gameObject);
+                foreach (var child in children)
+                {
+                    DestroyImmediate(child.gameObject);
+                }
             }
+            m_pathCreated = m_path;
 
             if (string.IsNullOrEmpty(m_path))
                 return;
@@ -70,6 +76,7 @@ namespace Shenmunity
             }
 
             Transform[] bones = new Transform[model.m_nodes.Count];
+            Transform[] existingNodes = GetComponentsInChildren<Transform>();
 
             int numberVerts = 0;
             int index = 0;
@@ -87,7 +94,7 @@ namespace Shenmunity
                     parent = transform;
                 }
 
-                nodes[id] = CreateNode(node, parent);
+                nodes[id] = CreateBone(id, node, parent, existingNodes);
                 numberVerts += node.m_totalStripVerts;
                 bones[index++] = nodes[id];
             }
@@ -98,11 +105,6 @@ namespace Shenmunity
                 bindPoses[i] = Matrix4x4.identity;
             }
             
-            var mr = GetComponent<SkinnedMeshRenderer>();
-            if (!mr)
-            {
-                mr = gameObject.AddComponent<SkinnedMeshRenderer>();
-            }
             var mesh = new Mesh();
             mesh.bindposes = bindPoses;
             var verts = new Vector3[numberVerts];
@@ -208,6 +210,22 @@ namespace Shenmunity
                 mesh.SetIndices(inds.ToArray(), MeshTopology.Triangles, subMesh);
             }
 
+            if(!m_mesh)
+            {
+                var meshNode = new GameObject("Mesh");
+                m_mesh = meshNode.transform;
+                m_mesh.parent = transform;
+                m_mesh.localPosition = Vector3.zero;
+                m_mesh.localRotation = Quaternion.identity;
+                m_mesh.localScale = Vector3.one;
+                meshNode.hideFlags = HideFlags.DontSave;
+            }
+
+            var mr = m_mesh.GetComponent<SkinnedMeshRenderer>();
+            if (!mr)
+            {
+                mr = m_mesh.gameObject.AddComponent<SkinnedMeshRenderer>();
+            }
             mr.sharedMesh = null;
             mr.sharedMesh = mesh;
             mr.rootBone = bones[0];
@@ -265,25 +283,26 @@ namespace Shenmunity
             material.EnableKeyword("_ALPHATEST_ON");
         }
 
-        Transform CreateNode(Model.Node node, Transform parent)
+        Transform CreateBone(uint id, Model.Node node, Transform parent, Transform[] existingBones)
         {
-            var go = new GameObject(string.Format("Node {0} {1}", node.m_treeDepth, node.m_childIndex));
+            string name = id.ToString();
 
-            go.hideFlags = HideFlags.DontSave;
-            if (!m_allowEdit)
+            var bone = existingBones.FirstOrDefault(x => x.name == name);
+            if(!bone)
             {
-                go.hideFlags |= HideFlags.NotEditable;
-            }
+                var go = new GameObject(name);
+                bone = go.transform;
 
-            go.transform.parent = parent;
-            go.transform.localPosition = new Vector3(node.x, node.y, node.z);
-            go.transform.localScale = new Vector3(node.scaleX, node.scaleY, node.scaleZ);
-            go.transform.localEulerAngles = new Vector3(0, 0, 0);
-            go.transform.Rotate(Vector3.forward, node.rotZ);
-            go.transform.Rotate(Vector3.up, node.rotY);
-            go.transform.Rotate(Vector3.right, node.rotX);
+                bone.parent = parent;
+                bone.localPosition = new Vector3(node.x, node.y, node.z);
+                bone.localScale = new Vector3(node.scaleX, node.scaleY, node.scaleZ);
+                bone.localEulerAngles = new Vector3(0, 0, 0);
+                bone.Rotate(Vector3.forward, node.rotZ);
+                bone.Rotate(Vector3.up, node.rotY);
+                bone.Rotate(Vector3.right, node.rotX);
+            }
             
-            return go.transform;
+            return bone;
         }
     }
 

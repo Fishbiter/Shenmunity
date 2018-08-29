@@ -14,6 +14,7 @@ namespace Shenmunity
         public bool m_allowEdit = false;
         string m_pathCreated;
         Transform m_mesh;
+        const float SHENMUE_FLIP = -1.0f;
 
         private void Awake()
         {
@@ -150,6 +151,9 @@ namespace Shenmunity
                             boneIndex = nodeIndex;
                         }
 
+                        pos.x *= SHENMUE_FLIP;
+                        norm.x *= SHENMUE_FLIP;
+
                         int oldVertsEmitted = numberVertsEmitted;
                         fv.m_vertIndex = AddVert(vertLookup, pos, norm, fv.m_uv, boneIndex, verts, norms, uvs, boneWeights, ref numberVertsEmitted);
                         if(numberVertsEmitted > oldVertsEmitted)
@@ -191,7 +195,7 @@ namespace Shenmunity
                             for (int i = 0; i < strip.m_faceVerts.Count - 2; i++)
                             {
                                 inds.Add(strip.m_faceVerts[i].m_vertIndex);
-                                if ((i & 1) != (strip.m_flipped ? 1 : 0))
+                                if ((i & 1) != (strip.m_flipped ? 0 : 1))
                                 {
                                     inds.Add(strip.m_faceVerts[i + 1].m_vertIndex);
                                     inds.Add(strip.m_faceVerts[i + 2].m_vertIndex);
@@ -295,12 +299,12 @@ namespace Shenmunity
                 bone = go.transform;
 
                 bone.parent = parent;
-                bone.localPosition = new Vector3(node.x, node.y, node.z);
+                bone.localPosition = new Vector3(node.x * SHENMUE_FLIP, node.y, node.z);
                 bone.localScale = new Vector3(node.scaleX, node.scaleY, node.scaleZ);
                 bone.localEulerAngles = new Vector3(0, 0, 0);
                 bone.Rotate(Vector3.forward, node.rotZ);
                 bone.Rotate(Vector3.up, node.rotY);
-                bone.Rotate(Vector3.right, node.rotX);
+                bone.Rotate(Vector3.right, node.rotX * SHENMUE_FLIP);
             }
             
             return bone;

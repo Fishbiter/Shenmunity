@@ -109,7 +109,7 @@ namespace Shenmunity
 
             public int m_totalStripVerts = 0; //derived (not read)
 
-            public List<Strip> m_faces = new List<Strip>();
+            public List<Strip> m_strips = new List<Strip>();
         
             public List<Vector3> m_pos = new List<Vector3>();
             public List<Vector3> m_norm = new List<Vector3>();
@@ -345,7 +345,7 @@ namespace Shenmunity
                 var face = new Strip();
                 face.m_texture = stripHeader.textureNumber;
 
-                node.m_faces.Add(face);
+                node.m_strips.Add(face);
 
                 var numberVerts = 0xffff - m_reader.ReadUInt16() + 1;
                 for (int v = 0; v < numberVerts; v++)
@@ -356,8 +356,8 @@ namespace Shenmunity
 
                     if(stripHeader.stripFormat >= 0x11)
                     {
-                        fv.m_uv.x = (float)(m_reader.ReadInt16() & 0x3ff) / 0x3ff;
-                        fv.m_uv.y = (float)(m_reader.ReadInt16() & 0x3ff) / 0x3ff;
+                        fv.m_uv.x = (float)(m_reader.ReadInt16()) / 0x3ff;
+                        fv.m_uv.y = (float)(m_reader.ReadInt16()) / 0x3ff;
                     }
                     if (stripHeader.stripFormat >= 0x1c)
                     {

@@ -120,7 +120,7 @@ namespace Shenmunity
             int sourceBaseVert = 0;
             foreach (var node in model.m_nodeInLoadOrder)
             {
-                foreach (var face in node.m_faces)
+                foreach (var face in node.m_strips)
                 {
                     foreach (var fv in face.m_faceVerts)
                     {
@@ -184,26 +184,27 @@ namespace Shenmunity
 
                 foreach (var node in model.m_nodeInLoadOrder)
                 {
-                    foreach (var face in node.m_faces)
+                    foreach (var strip in node.m_strips)
                     {
-                        if (face.m_texture == subMesh)
+                        if (strip.m_texture == subMesh)
                         {
-                            for (int i = 0; i < face.m_faceVerts.Count - 2; i++)
+                            for (int i = 0; i < strip.m_faceVerts.Count - 2; i++)
                             {
-                                inds.Add(face.m_faceVerts[i].m_vertIndex);
-                                if ((i & 1) != (face.m_flipped ? 1 : 0))
+                                inds.Add(strip.m_faceVerts[i].m_vertIndex);
+                                if ((i & 1) != (strip.m_flipped ? 1 : 0))
                                 {
-                                    inds.Add(face.m_faceVerts[i + 1].m_vertIndex);
-                                    inds.Add(face.m_faceVerts[i + 2].m_vertIndex);
+                                    inds.Add(strip.m_faceVerts[i + 1].m_vertIndex);
+                                    inds.Add(strip.m_faceVerts[i + 2].m_vertIndex);
                                 }
                                 else
                                 {
-                                    inds.Add(face.m_faceVerts[i + 2].m_vertIndex);
-                                    inds.Add(face.m_faceVerts[i + 1].m_vertIndex);
+                                    inds.Add(strip.m_faceVerts[i + 2].m_vertIndex);
+                                    inds.Add(strip.m_faceVerts[i + 1].m_vertIndex);
                                 }
                             }
                         }
-                        baseVert += face.m_faceVerts.Count;
+
+                        baseVert += strip.m_faceVerts.Count;
                     }
                 }
 

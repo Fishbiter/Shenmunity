@@ -20,7 +20,7 @@ namespace Shenmunity
         {
             public int m_texture;
             public bool m_flipped;
-            public List<StripVert> m_faceVerts = new List<StripVert>();
+            public List<StripVert> m_stripVerts = new List<StripVert>();
         }
 
         public class StripVert
@@ -168,6 +168,7 @@ namespace Shenmunity
                 p9 = br.ReadInt16();
                 p10 = br.ReadInt16();
                 textureNumber = br.ReadInt16();
+
                 p12 = br.ReadInt16();
                 p13 = br.ReadInt16();
                 stripFormat = br.ReadInt16();
@@ -240,7 +241,7 @@ namespace Shenmunity
                         case 0x00100003:
                         case 0x00100004:
                             Seek(-4, SeekOrigin.Current);
-                            ReadFaces(obj, footer.verticesNumber);
+                            ReadStrips(obj, footer.verticesNumber);
                             break;
                         case 0x0008000e:
                             //this is "MeshData" I don't know what it's for
@@ -331,7 +332,7 @@ namespace Shenmunity
             }
         }
 
-        void ReadFaces(Node node, int vertexCount)
+        void ReadStrips(Node node, int vertexCount)
         {
             var stripHeader = new StripHeader(m_reader);
 
@@ -340,7 +341,7 @@ namespace Shenmunity
             if (stripHeader.mustBe16 != 0x10)
                 return;
 
-            for(int i = 0; i < stripHeader.numberStrips; i++)
+            for (int i = 0; i < stripHeader.numberStrips; i++)
             {
                 var face = new Strip();
                 face.m_texture = stripHeader.textureNumber;
@@ -364,7 +365,7 @@ namespace Shenmunity
                         fv.m_col.x = m_reader.ReadInt16();
                         fv.m_col.y = m_reader.ReadInt16();
                     }
-                    face.m_faceVerts.Add(fv);
+                    face.m_stripVerts.Add(fv);
                     node.m_totalStripVerts++;
                 }
             }
@@ -535,8 +536,8 @@ namespace Shenmunity
             {
                 Seek(4, SeekOrigin.Current); //"TEXN"
                 long end = GetPos() + m_reader.ReadInt32() - 4;
-                Seek(4, SeekOrigin.Current); //unknown (address?)
-                Seek(4, SeekOrigin.Current); //Unknown (address?)
+                int unknown1 = m_reader.ReadInt32(); //unknown (address?)
+                int unknown2 = m_reader.ReadInt32(); //unknown (address?)
                 Seek(4, SeekOrigin.Current); //"GBIX"
                 long gbixLen = m_reader.ReadInt32();
                 long gbix = m_reader.ReadInt64();

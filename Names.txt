@@ -3,7 +3,7 @@ Shenmue/disk_5b69b0ee/B2CF736F Can
 Shenmue/disk_5b69b0ee/9A19E191 ShenmueBox
 Shenmue/disk_5b69b0ee/F758452F Kitty
 Shenmue/disk_5b69b0ee/2A83FD10 Chihuahua (UV Stretching)
-Shenmue/disk_5b69b0ee/408868EE Sakaragaoka
+Shenmue/disk_5b69b0ee/408868EE Sakuragaoka
 Shenmue/disk_5b69b0ee/31D46ED4 Dojo
 Shenmue/disk_5b69b0ee/6C0B2E98 Book(invalid verts)
 Shenmue/disk_5b69b0ee/9C75C93C HongKongFlier

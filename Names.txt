@@ -16,9 +16,16 @@ Shenmue/disk_5b69b0ee/D2F726B1 HarborEntrance
 Shenmue/disk_5b69b0ee/301C2A6E TravelAgent
 Shenmue/disk_5b69b0ee/61413F28 DojoInterior
 Shenmue/disk_5b69b0ee/AE07760B Ship
+Shenmue/disk_5b69b0ee/45165932 Ryu
+Shenmue/disk_5b69b0ee/AC58EB99 ChinaShop
+Shenmue/disk_5b69b0ee/688140D3 DojoBuildings
+Shenmue/disk_5b69b0ee/753F6F1B DojoSummer
+Shenmue/disk_5b69b0ee/41E646E9 DojoWinter
 Shenmue/disk_5b69b0ee/0180E74B TomatoDoors
 Shenmue/disk_5b69b0ee/8C6217B7 PizzaSlice
+Shenmue/disk_5b69b0ee/B01D282F TaiChi
 Shenmue/disk_5b69b0ee/FE05890B TrayWithCups
+Shenmue/disk_5b69b0ee/5AE7755E Cement With UV Issue
 Shenmue/disk_5b69b0ee/3D86695E Bus
 Shenmue/disk_5b69b0ee/33042D68 Vest
 Shenmue/disk_5b69b0ee/30E87E7F Broom

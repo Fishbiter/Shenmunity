@@ -12,6 +12,7 @@ namespace Shenmunity
         long m_base;
 
         public Dictionary<uint, Node> m_nodes = new Dictionary<uint, Node>();
+        public List<Node> m_nodeInLoadOrder = new List<Node>();
 
         public List<Texture> m_textures = new List<Texture>();
 
@@ -261,14 +262,16 @@ namespace Shenmunity
                 ReadVertices(obj, footer.verticesNumber);
             }
             m_nodes[pos] = obj;
+            m_nodeInLoadOrder.Add(obj);
             if (obj.child != 0)
             {
-                GetNode(obj.child);
+                var n = GetNode(obj.child);
+                n.up = pos;
             }
             if (obj.next != 0)
             {
                 GetNode(obj.next);
-            }
+             }
             if (obj.up != 0)
             {
                 GetNode(obj.up);
@@ -347,16 +350,16 @@ namespace Shenmunity
                     var fv = new FaceVert();
                     int rawVert = m_reader.ReadInt16();
                     fv.m_vertIndex = rawVert;
-                    if (fv.m_vertIndex < 0)
-                    {
-                        fv.m_vertIndex = -fv.m_vertIndex;
-                        face.m_flipped = true; //this is a guess! Maybe double sided?
-                    }
-                    if(fv.m_vertIndex >= vertexCount)
-                    {
-                        Debug.LogWarningFormat("Invalid vertex");
-                        fv.m_vertIndex = Mathf.Min(vertexCount - 1, fv.m_vertIndex);
-                    }
+                    //if (fv.m_vertIndex < 0)
+                    //{
+                    //    fv.m_vertIndex = -fv.m_vertIndex;
+                    //    face.m_flipped = true; //this is a guess! Maybe double sided?
+                    //}
+                    //if(fv.m_vertIndex >= vertexCount)
+                    //{
+                    //    Debug.LogWarningFormat("Invalid vertex");
+                    //    //fv.m_vertIndex = Mathf.Min(vertexCount - 1, fv.m_vertIndex);
+                    //}
 
                     if(stripHeader.stripFormat >= 0x11)
                     {

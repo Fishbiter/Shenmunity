@@ -302,9 +302,9 @@ namespace Shenmunity
                 bone.localPosition = new Vector3(node.x * SHENMUE_FLIP, node.y, node.z);
                 bone.localScale = new Vector3(node.scaleX, node.scaleY, node.scaleZ);
                 bone.localEulerAngles = new Vector3(0, 0, 0);
-                bone.Rotate(Vector3.forward, node.rotZ);
-                bone.Rotate(Vector3.up, node.rotY);
-                bone.Rotate(Vector3.right, node.rotX * SHENMUE_FLIP);
+                bone.Rotate(Vector3.forward, node.rotZ * SHENMUE_FLIP);
+                bone.Rotate(Vector3.up, node.rotY * SHENMUE_FLIP);
+                bone.Rotate(Vector3.right, node.rotX);
             }
             
             return bone;

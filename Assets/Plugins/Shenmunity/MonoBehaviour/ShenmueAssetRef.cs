@@ -14,17 +14,20 @@ namespace Shenmunity
 
         public void DoInspectorGUI(TACReader.FileType type)
         {
-            using (new GUILayout.HorizontalScope())
+            if (!string.IsNullOrEmpty(m_path))
             {
-                GUILayout.Label(m_path);
-                var entry = TACReader.GetEntry(m_path);
-                if (entry != null)
+                using (new GUILayout.HorizontalScope())
                 {
-                    var name = EditorGUILayout.DelayedTextField("TAG", entry.m_name);
-                    if(name != entry.m_name)
+                    GUILayout.Label(m_path);
+                    var entry = TACReader.GetEntry(m_path);
+                    if (entry != null)
                     {
-                        entry.m_name = name;
-                        TACReader.SaveNames();
+                        var name = EditorGUILayout.DelayedTextField("TAG", entry.m_name);
+                        if (name != entry.m_name)
+                        {
+                            entry.m_name = name;
+                            TACReader.SaveNames();
+                        }
                     }
                 }
             }

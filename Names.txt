@@ -29,4 +29,4 @@ Shenmue/disk_5b69b0ee/5AE7755E Cement With UV Issue
 Shenmue/disk_5b69b0ee/3D86695E Bus
 Shenmue/disk_5b69b0ee/33042D68 Vest
 Shenmue/disk_5b69b0ee/30E87E7F Broom
-Shenmue/disk_5b69b0ee/786F3F0D Character
+Shenmue/disk_5b69b0ee/786F3F0D Nozomi

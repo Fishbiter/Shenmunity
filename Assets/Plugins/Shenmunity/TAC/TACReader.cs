@@ -1,13 +1,15 @@
+using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 
 namespace Shenmunity
 {
     public class TACReader
     {
-        public static string s_shenmuePath = "E:/SteamLibrary/steamapps/common/SMLaunch";
+        public static string s_shenmuePath;
 
         public enum FileType
         {
@@ -65,6 +67,48 @@ namespace Shenmunity
             }
 
             return m_byType[type];
+        }
+
+        static void FindShenmue()
+        {
+            var steamPath = (string)Registry.GetValue(@"HKEY_CURRENT_USER\Software\Valve\Steam", "SteamPath", null);
+            if(string.IsNullOrEmpty(steamPath))
+            {
+                throw new FileNotFoundException("Couldn't find steam registry keys HKEY_CURRENT_USER\\Software\\Valve\\Steam\\SteamPath");
+            }
+
+            steamPath += "/" + "SteamApps";
+
+            var libraryPaths = new List<string>();
+            libraryPaths.Add(steamPath + "/common");
+
+            var otherPathsFile = File.OpenText(steamPath + "/libraryfolders.vdf");
+            string line;
+            int libIndex = 1;
+            while((line = otherPathsFile.ReadLine()) != null)
+            {
+                string[] param = line.Split('\t').Where(x => !string.IsNullOrEmpty(x)).ToArray();
+                if(param[0] == "\"" + libIndex + "\"")
+                {
+                    libIndex++;
+                    libraryPaths.Add(param[1].Replace("\"", "").Replace("\\\\", "/") + "/steamapps/common");
+                }
+            }
+
+            foreach(var path in libraryPaths)
+            {
+                var smpath = path + "/" + "SMLaunch";
+                if (Directory.Exists(smpath + "/" + s_sources["Shenmue"]))
+                {
+                    s_shenmuePath = smpath;
+                    break;
+                }
+            }
+
+            if(string.IsNullOrEmpty(s_shenmuePath))
+            {
+                throw new FileNotFoundException("Couldn't find shenmue installation in any steam library dir");
+            }
         }
 
         static public string GetTAC(string path)
@@ -129,6 +173,8 @@ namespace Shenmunity
 
         static void BuildFiles()
         {
+            FindShenmue();
+
             m_files = new Dictionary<string, Dictionary<string, TACEntry>>();
 
             foreach(var s in s_sources)

@@ -471,13 +471,15 @@ namespace Shenmunity
                 {
                     for (int sqx = 0; sqx < width; sqx += twiddleSqr)
                     {
+                        long baseIndex = sqy * width + sqx;
+
                         for (int y = 0; y < twiddleSqr; y++)
                         {
                             for (int x = 0; x < twiddleSqr; x++)
                             {
                                 int index = squareIndex + ((swizzleMap[x] << 1) | swizzleMap[y]);
 
-                                long destinationIndex = squareIndex + (y * twiddleSqr) + x;
+                                long destinationIndex = baseIndex + (y * width) + x;
 
                                 newTexels[destinationIndex] = texels[index];
                             }

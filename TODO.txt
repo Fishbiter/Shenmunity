@@ -1,2 +1,4 @@
-Separate meshes option
 Keyframed anim (e.g. birds)
+avatars
+Ryu's face
+Dobuita scenes throwing errors

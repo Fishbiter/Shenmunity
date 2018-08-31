@@ -20,14 +20,16 @@ namespace Shenmunity
 
         public MeshMode m_meshMode;
 
+        [SerializeField]
         string m_pathCreated;
-        const float SHENMUE_FLIP = -1.0f;
+
+        public const float SHENMUE_FLIP = -1.0f;
         
         Transform[] m_bones;
 
         private void Awake()
         {
-            //LoadModel();
+            LoadModel();
         }
 
         public override void OnChange()
@@ -117,7 +119,9 @@ namespace Shenmunity
                 numberVerts += node.m_totalStripVerts;
                 m_bones[index++] = nodes[id];
 
-                foreach(var strip in node.m_strips)
+                nodes[id].GetComponent<ShenmueTransform>().GenerateCollider(node);
+
+                foreach (var strip in node.m_strips)
                 {
                     if(strip.m_mirrorUVs)
                     {
@@ -422,9 +426,18 @@ namespace Shenmunity
                 bone.Rotate(Vector3.forward, node.rotZ * SHENMUE_FLIP);
                 bone.Rotate(Vector3.up, node.rotY * SHENMUE_FLIP);
                 bone.Rotate(Vector3.right, node.rotX);
+
+                bone.gameObject.AddComponent<ShenmueTransform>();
             }
             
             return bone;
+        }
+
+        public void CreateAvatar()
+        {
+            var hd = new HumanDescription();
+
+            var mapping = new List<HumanBone>();
         }
     }
 
@@ -438,6 +451,11 @@ namespace Shenmunity
             var smar = (ShenmueModel)target;
 
             smar.DoInspectorGUI(TACReader.FileType.MODEL);
+
+            if(GUILayout.Button("Create Avatar"))
+            {
+                smar.CreateAvatar();
+            }
 
             DrawDefaultInspector();
         }

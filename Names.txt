@@ -13,6 +13,7 @@ Shenmue/disk_5b69b0ee/FFD24437 Warehouse
 Shenmue/disk_5b69b0ee/83B92E25 YoungRyu
 Shenmue/disk_5b69b0ee/8F827444 Matchbox
 Shenmue/disk_5b69b0ee/D2F726B1 HarborEntrance
+Shenmue/disk_5b69b0ee/A8CEDB5C SnowyDobuita
 Shenmue/disk_5b69b0ee/301C2A6E TravelAgent
 Shenmue/disk_5b69b0ee/61413F28 DojoInterior
 Shenmue/disk_5b69b0ee/AE07760B Ship
@@ -24,9 +25,12 @@ Shenmue/disk_5b69b0ee/41E646E9 DojoWinter
 Shenmue/disk_5b69b0ee/0180E74B TomatoDoors
 Shenmue/disk_5b69b0ee/8C6217B7 PizzaSlice
 Shenmue/disk_5b69b0ee/B01D282F TaiChi
+Shenmue/disk_5b69b0ee/68C50971 Dojo
 Shenmue/disk_5b69b0ee/FE05890B TrayWithCups
-Shenmue/disk_5b69b0ee/5AE7755E Cement With UV Issue
+Shenmue/disk_5b69b0ee/5AE7755E Cement
 Shenmue/disk_5b69b0ee/3D86695E Bus
 Shenmue/disk_5b69b0ee/33042D68 Vest
 Shenmue/disk_5b69b0ee/30E87E7F Broom
 Shenmue/disk_5b69b0ee/786F3F0D Nozomi
+Shenmue/disk_5b69b0ee/44DCE303 DobuitaToHarbor
+Shenmue/disk_5b69b0ee/5E5E1060 HarborArrival

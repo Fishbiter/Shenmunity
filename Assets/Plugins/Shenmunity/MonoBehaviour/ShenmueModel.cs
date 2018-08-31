@@ -27,6 +27,13 @@ namespace Shenmunity
         
         Transform[] m_bones;
 
+        [MenuItem("GameObject/Shenmunity/Model", priority = 10)]
+        public static void CreateShenmueModel()
+        {
+            var sm = new GameObject("Shenmue model");
+            TACFileSelector.SelectFile(TACReader.FileType.MODEL, sm.AddComponent<ShenmueModel>());
+        }
+
         private void Awake()
         {
             LoadModel();
@@ -58,7 +65,7 @@ namespace Shenmunity
             if (string.IsNullOrEmpty(m_path))
                 return;
 
-            var model = new Model(m_path);
+            var model = new MT5(m_path);
 
             var nodes = new Dictionary<uint, Transform>();
 
@@ -82,10 +89,10 @@ namespace Shenmunity
                     var mat = new Material(Shader.Find("Standard"));
                     switch (srcTex.m_type)
                     {
-                        case Model.PVRType.ARGB4444:
+                        case MT5.PVRType.ARGB4444:
                             SetTransparent(mat);
                             break;
-                        case Model.PVRType.ARGB1555:
+                        case MT5.PVRType.ARGB1555:
                             SetCutout(mat);
                             break;
                     }
@@ -137,7 +144,7 @@ namespace Shenmunity
                 {
                     Bounds bounds;
                     Material[] meshMats;
-                    var mesh = CreateMeshForNodes(transform, model, new Model.Node[] { node }, new Transform[] { m_bones[boneIndex] }, nodes, out bounds, mats, out meshMats);
+                    var mesh = CreateMeshForNodes(transform, model, new MT5.Node[] { node }, new Transform[] { m_bones[boneIndex] }, nodes, out bounds, mats, out meshMats);
 
                     SetMeshToGameObject(m_bones[boneIndex], mesh, meshMats, bounds);
                     boneIndex++;
@@ -204,7 +211,7 @@ namespace Shenmunity
             }
         }
 
-        Mesh CreateMeshForNodes(Transform root, Model model, Model.Node[] nodes, Transform[] bones, Dictionary<uint, Transform> allNodes, out Bounds bounds, Material[] allMats, out Material[] mats)
+        Mesh CreateMeshForNodes(Transform root, MT5 model, MT5.Node[] nodes, Transform[] bones, Dictionary<uint, Transform> allNodes, out Bounds bounds, Material[] allMats, out Material[] mats)
         {
             var usedMaterials = new Dictionary<int, bool>();
 
@@ -409,7 +416,7 @@ namespace Shenmunity
             material.EnableKeyword("_ALPHATEST_ON");
         }
 
-        Transform CreateBone(uint id, Model.Node node, Transform parent, Transform[] existingBones)
+        Transform CreateBone(uint id, MT5.Node node, Transform parent, Transform[] existingBones)
         {
             string name = id.ToString();
 
@@ -452,10 +459,10 @@ namespace Shenmunity
 
             smar.DoInspectorGUI(TACReader.FileType.MODEL);
 
-            if(GUILayout.Button("Create Avatar"))
-            {
-                smar.CreateAvatar();
-            }
+            //if(GUILayout.Button("Create Avatar"))
+            //{
+            //    smar.CreateAvatar();
+            //}
 
             DrawDefaultInspector();
         }

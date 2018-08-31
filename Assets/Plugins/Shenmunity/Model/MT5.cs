@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace Shenmunity
 {
-    public class Model
+    public class MT5
     {
         BinaryReader m_reader;
         int m_textureStart;
@@ -195,7 +195,7 @@ namespace Shenmunity
             public short numberStrips;
         }
 
-        public Model(string path)
+        public MT5(string path)
         {
             int len = 0;
 

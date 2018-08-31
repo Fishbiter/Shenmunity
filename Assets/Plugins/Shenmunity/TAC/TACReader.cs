@@ -52,6 +52,7 @@ namespace Shenmunity
         static Dictionary<string, string> s_sources = new Dictionary<string, string>
         {
             { "Shenmue", "sm1/archives/dx11/data" },
+            //{ "Shenmue2", "sm2/archives/dx11/data" },
         };
 
         static Dictionary<string, Dictionary<string, TACEntry>> m_files;

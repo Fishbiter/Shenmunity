@@ -160,6 +160,8 @@ namespace Shenmunity
 
         static public BinaryReader GetBytes(string path, out int length)
         {
+            GetFiles();
+
             return GetBytes(GetTAC(path), GetEntry(path), out length);
         }
 

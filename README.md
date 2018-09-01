@@ -26,7 +26,7 @@ Three mesh modes are supported:
 
 # Transforms
 
-When Shenmunity creates a model it will create the transform hierarchy as Unity transforms. These will not be recreated, so you can move them etc. 
+When Shenmunity creates a model it will create the transform hierarchy as Unity transforms. These will not be recreated, so you can move them etc. Note it currently uses the names to re-hook them, so you mustn't rename them.
 
 Note that if you change model the hierarchy will be destroyed.
 

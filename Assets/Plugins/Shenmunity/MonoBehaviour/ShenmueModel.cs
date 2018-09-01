@@ -27,12 +27,14 @@ namespace Shenmunity
         
         Transform[] m_bones;
 
+#if UNITY_EDITOR
         [MenuItem("GameObject/Shenmunity/Model", priority = 10)]
         public static void CreateShenmueModel()
         {
             var sm = new GameObject("Shenmue model");
             TACFileSelector.SelectFile(TACReader.FileType.MODEL, sm.AddComponent<ShenmueModel>());
         }
+#endif
 
         private void Awake()
         {
@@ -106,7 +108,6 @@ namespace Shenmunity
             m_bones = new Transform[model.m_nodes.Count];
             Transform[] existingNodes = GetComponentsInChildren<Transform>();
 
-            int numberVerts = 0;
             int index = 0;
             foreach (var id in model.m_nodes.Keys)
             {
@@ -123,10 +124,12 @@ namespace Shenmunity
                 }
 
                 nodes[id] = CreateBone(id, node, parent, existingNodes);
-                numberVerts += node.m_totalStripVerts;
+
+                var st = nodes[id].GetComponent<ShenmueTransform>();
+
                 m_bones[index++] = nodes[id];
 
-                nodes[id].GetComponent<ShenmueTransform>().GenerateCollider(node);
+                st.GenerateCollider(node);
 
                 foreach (var strip in node.m_strips)
                 {
@@ -140,13 +143,21 @@ namespace Shenmunity
             if (m_meshMode == MeshMode.Individual)
             {
                 int boneIndex = 0;
-                foreach (var node in model.m_nodeInLoadOrder)
+                foreach (var id in model.m_nodes.Keys)
                 {
-                    Bounds bounds;
-                    Material[] meshMats;
-                    var mesh = CreateMeshForNodes(transform, model, new MT5.Node[] { node }, new Transform[] { m_bones[boneIndex] }, nodes, out bounds, mats, out meshMats);
+                    if (nodes[id].GetComponent<ShenmueTransform>().m_generateGeometry)
+                    {
+                        Bounds bounds;
+                        Material[] meshMats;
+                        var mesh = CreateMeshForNodes(transform, model, new MT5.Node[] { model.m_nodes[id] }, new Transform[] { m_bones[boneIndex] }, nodes, out bounds, mats, out meshMats);
 
-                    SetMeshToGameObject(m_bones[boneIndex], mesh, meshMats, bounds);
+                        SetMeshToGameObject(m_bones[boneIndex], mesh, meshMats, bounds);
+                    }
+                    else
+                    {
+                        PurgeMesh(m_bones[boneIndex]);
+                    }
+
                     boneIndex++;
                 }
                 PurgeMesh(transform);
@@ -158,9 +169,18 @@ namespace Shenmunity
                     PurgeMesh(bone);
                 }
 
+                var nodesToGenerate = new List<MT5.Node>();
+                foreach (var id in model.m_nodes.Keys)
+                {
+                    if (!nodes[id].GetComponent<ShenmueTransform>().m_generateGeometry)
+                        continue;
+
+                    nodesToGenerate.Add(model.m_nodes[id]);
+                }
+
                 Bounds bounds;
                 Material[] meshMats;
-                var mesh = CreateMeshForNodes(transform, model, model.m_nodeInLoadOrder.ToArray(), m_bones, nodes, out bounds, mats, out meshMats);
+                var mesh = CreateMeshForNodes(transform, model, nodesToGenerate.ToArray(), m_bones, nodes, out bounds, mats, out meshMats);
 
                 SetMeshToGameObject(transform, mesh, meshMats, bounds);
             }
@@ -242,6 +262,7 @@ namespace Shenmunity
             int sourceBaseVert = 0;
             foreach (var node in nodes)
             {
+                int nodeBoneIndex = Array.IndexOf(bones, allNodes[node.id]);
                 foreach (var strip in node.m_strips)
                 {
                     if (strip.m_texture < allMats.Length) //materials out side this bound appear to be volumes of some kind... maybe PVS blockers?
@@ -279,7 +300,7 @@ namespace Shenmunity
                         {
                             pos = node.m_pos[fv.m_vertIndex];
                             norm = node.m_norm[fv.m_vertIndex];
-                            boneIndex = nodeIndex;
+                            boneIndex = nodeBoneIndex;
                         }
 
                         pos.x *= SHENMUE_FLIP;
@@ -463,6 +484,18 @@ namespace Shenmunity
             //{
             //    smar.CreateAvatar();
             //}
+
+            if(GUILayout.Button("Set Mesh Collider for all visible nodes"))
+            {
+                foreach(var st in smar.GetComponentsInChildren<ShenmueTransform>())
+                {
+                    if(st.m_generateGeometry)
+                    {
+                        st.m_collisionType = ShenmueTransform.CollisionType.Mesh;
+                    }
+                }
+                smar.OnChange();
+            }
 
             DrawDefaultInspector();
         }

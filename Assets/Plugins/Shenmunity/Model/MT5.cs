@@ -100,6 +100,7 @@ namespace Shenmunity
             public float rotZ;
             public float scaleX, scaleY, scaleZ;
             public float x, y, z;
+            public uint id;
             public uint child;
             public uint next;
             public uint up;
@@ -224,6 +225,7 @@ namespace Shenmunity
             Seek(pos, SeekOrigin.Begin);
 
             Node obj = ReadObjectHeader();
+            obj.id = (uint)pos;
 
             if (obj.meshData != 0)
             {

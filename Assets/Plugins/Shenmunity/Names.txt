@@ -1,0 +1,36 @@
+Shenmue/disk/6D70CBC4 Umbrella
+Shenmue/disk/B2CF736F Can
+Shenmue/disk/9A19E191 ShenmueBox
+Shenmue/disk/F758452F Kitty
+Shenmue/disk/2A83FD10 Chihuahua (UV Stretching)
+Shenmue/disk/408868EE Sakuragaoka
+Shenmue/disk/31D46ED4 Dojo
+Shenmue/disk/6C0B2E98 Book(invalid verts)
+Shenmue/disk/9C75C93C HongKongFlier
+Shenmue/disk/C04F7244 Yamanose
+Shenmue/disk/2D485480 HarborWater?
+Shenmue/disk/FFD24437 Warehouse
+Shenmue/disk/83B92E25 YoungRyu
+Shenmue/disk/8F827444 Matchbox
+Shenmue/disk/D2F726B1 HarborEntrance
+Shenmue/disk/A8CEDB5C SnowyDobuita
+Shenmue/disk/301C2A6E TravelAgent
+Shenmue/disk/61413F28 DojoInterior
+Shenmue/disk/AE07760B Ship
+Shenmue/disk/45165932 Ryu
+Shenmue/disk/AC58EB99 ChinaShop
+Shenmue/disk/688140D3 DojoBuildings
+Shenmue/disk/753F6F1B DojoSummer
+Shenmue/disk/41E646E9 DojoWinter
+Shenmue/disk/0180E74B TomatoDoors
+Shenmue/disk/8C6217B7 PizzaSlice
+Shenmue/disk/B01D282F TaiChi
+Shenmue/disk/68C50971 Dojo
+Shenmue/disk/FE05890B TrayWithCups
+Shenmue/disk/5AE7755E Cement
+Shenmue/disk/3D86695E Bus
+Shenmue/disk/33042D68 Vest
+Shenmue/disk/30E87E7F Broom
+Shenmue/disk/786F3F0D Nozomi
+Shenmue/disk/44DCE303 DobuitaToHarbor
+Shenmue/disk/5E5E1060 HarborArrival

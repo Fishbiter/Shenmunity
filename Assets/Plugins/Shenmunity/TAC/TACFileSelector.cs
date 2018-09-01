@@ -1,3 +1,4 @@
+#if UNITY_EDITOR
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
@@ -52,6 +53,12 @@ namespace Shenmunity
 
         void OnGUI()
         {
+            if (m_list == null)
+            {
+                Close();
+                return;
+            }
+
             m_showNamed = GUILayout.Toggle(m_showNamed, "Only show named");
             m_search = GUILayout.TextField(m_search);
 
@@ -62,7 +69,7 @@ namespace Shenmunity
             {
                 if (m_showNamed && string.IsNullOrEmpty(r.m_name))
                     continue;
-
+                 
                 if (!string.IsNullOrEmpty(m_search) && (string.IsNullOrEmpty(r.m_name) || r.m_name.IndexOf(m_search) == -1))
                     continue;
 
@@ -81,3 +88,5 @@ namespace Shenmunity
         }
     }
 }
+
+#endif

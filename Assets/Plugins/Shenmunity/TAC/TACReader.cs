@@ -55,7 +55,10 @@ namespace Shenmunity
             //{ "Shenmue2", "sm2/archives/dx11/data" },
         };
 
+        static string s_namesFile = "Assets/Plugins/Shenmunity/Names.txt";
+
         static Dictionary<string, Dictionary<string, TACEntry>> m_files;
+        static Dictionary<string, string> m_tacToFilename = new Dictionary<string, string>();
         static Dictionary<FileType, List<TACEntry>> m_byType;
 
         static public List<TACEntry> GetFiles(FileType type)
@@ -115,18 +118,30 @@ namespace Shenmunity
         static public string GetTAC(string path)
         {
             string[] p = path.Split('/');
-            return s_shenmuePath + "/" + s_sources[p[0]] + "/" + p[1] + ".tac";
+            return s_shenmuePath + "/" + s_sources[p[0]] + "/" + m_tacToFilename[p[0]+"/"+p[1]];
         }
 
         static public TACEntry GetEntry(string path)
         {
             string[] p = path.Split('/');
-            return GetFiles()[GetTAC(path)][p[2]];
+
+            string tac = p[0] + "/" + p[1];
+
+            if (GetFiles().ContainsKey(tac))
+            {
+                var tacContents = GetFiles()[tac];
+                if(tacContents.ContainsKey(p[2]))
+                {
+                    return tacContents[p[2]];
+                }
+            }
+
+            return null;
         }
 
         static public void SaveNames()
         {
-            using (var file = File.CreateText("Names.txt"))
+            using (var file = File.CreateText(s_namesFile))
             {
                 foreach (var tac in GetFiles().Keys)
                 {
@@ -143,17 +158,21 @@ namespace Shenmunity
 
         static public void LoadNames()
         {
-            if(!File.Exists("Names.txt"))
+            if(!File.Exists(s_namesFile))
             {
                 return;
             }
-            using (var file = File.OpenText("Names.txt"))
+            using (var file = File.OpenText(s_namesFile))
             {
                 string line;
                 while ((line = file.ReadLine()) != null)
                 {
                     var ps = line.Split(new char[] { ' ' }, 2);
-                    GetEntry(ps[0]).m_name = ps[1];
+                    var e = GetEntry(ps[0]);
+                    if (e != null)
+                    {
+                        e.m_name = ps[1];
+                    }
                 }
             }
         }
@@ -208,9 +227,12 @@ namespace Shenmunity
             string tadFile = Path.ChangeExtension(tac, ".tad");
 
             var dir = new Dictionary<string, TACEntry>();
-            m_files[tac] = dir;
 
-            shortForm = shortForm + "/" + Path.GetFileNameWithoutExtension(tac);
+            string tacName = Path.GetFileNameWithoutExtension(tadFile);
+            tacName = shortForm + "/" + tacName.Substring(0, tacName.IndexOf("_")); //remove hash (these change per release)
+            
+            m_files[tacName] = dir;
+            m_tacToFilename[tacName] = Path.GetFileName(tac);
 
             using (BinaryReader reader = new BinaryReader(new FileStream(tadFile, FileMode.Open)))
             {
@@ -229,7 +251,7 @@ namespace Shenmunity
                     var hash = BitConverter.ToString(reader.ReadBytes(4)).Replace("-", "");
                     reader.BaseStream.Seek(8, SeekOrigin.Current); //skip padding
 
-                    r.m_path = shortForm + "/" + hash;
+                    r.m_path = tacName + "/" + hash;
 
                     dir[hash] = r;
 
@@ -253,7 +275,7 @@ namespace Shenmunity
 
             foreach (var tac in m_files.Keys)
             {
-                using (BinaryReader reader = new BinaryReader(new FileStream(tac, FileMode.Open)))
+                using (BinaryReader reader = new BinaryReader(new FileStream(GetTAC(tac), FileMode.Open)))
                 {
                     foreach(var e in m_files[tac].Values)
                     {

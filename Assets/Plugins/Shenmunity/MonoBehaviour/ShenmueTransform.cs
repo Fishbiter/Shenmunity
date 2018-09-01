@@ -16,6 +16,8 @@ namespace Shenmunity
             Mesh,
         };
 
+        public bool m_generateGeometry = true;
+
         public CollisionType m_collisionType;
         [HideInInspector]
         public string m_humanBone = "";
@@ -109,7 +111,7 @@ namespace Shenmunity
     }
 
 #if UNITY_EDITOR
-    [CustomEditor(typeof(ShenmueTransform))]
+    [CustomEditor(typeof(ShenmueTransform))][CanEditMultipleObjects]
     public class ShenmueTransformEditor : Editor
     {
         Vector2 m_boneScroll;

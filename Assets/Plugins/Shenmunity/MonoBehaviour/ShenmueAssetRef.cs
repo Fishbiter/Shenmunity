@@ -12,6 +12,7 @@ namespace Shenmunity
 
         public abstract void OnChange();
 
+#if UNITY_EDITOR
         public void DoInspectorGUI(TACReader.FileType type)
         {
             if (!string.IsNullOrEmpty(m_path))
@@ -52,5 +53,6 @@ namespace Shenmunity
                 OnChange();
             }
         }
+#endif
     }
 }

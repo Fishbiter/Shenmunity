@@ -5,6 +5,8 @@ using System.IO;
 using System.Linq;
 using System.Text;
 
+using UnityEngine;
+
 namespace Shenmunity
 {
     public class TACReader
@@ -23,6 +25,7 @@ namespace Shenmunity
             MODEL,
             SND,
             PVR,
+            PAWN,
 
             COUNT
         }
@@ -36,23 +39,24 @@ namespace Shenmunity
             new string[] { "DXBC" }, //DXBC
             new string[] { "PAKS" }, //PAKS
             new string[] { "PAKF" }, //PAKF
-            new string[] { "MDP7", "MDC7", "HRCM"}, //MODEL,
+            new string[] { "MDP7", "MDC7", "HRCM" }, //MODEL,
             new string[] { "DTPK" },//SND
-            new string[] {  "GBIX", "TEXN" }//PVR
+            new string[] { "GBIX", "TEXN" },//PVR
+            new string[] { "PAWN" },//PAWN
         };
 
         public class TACEntry
         {
             public string m_path;
             public string m_name;
-            public int m_offset;
-            public int m_length;
+            public uint m_offset;
+            public uint m_length;
         }
 
         static Dictionary<string, string> s_sources = new Dictionary<string, string>
         {
             { "Shenmue", "sm1/archives/dx11/data" },
-            //{ "Shenmue2", "sm2/archives/dx11/data" },
+            { "Shenmue2", "sm2/archives/dx11/data" },
         };
 
         static string s_namesFile = "Assets/Plugins/Shenmunity/Names.txt";
@@ -177,14 +181,14 @@ namespace Shenmunity
             }
         }
 
-        static public BinaryReader GetBytes(string path, out int length)
+        static public BinaryReader GetBytes(string path, out uint length)
         {
             GetFiles();
 
             return GetBytes(GetTAC(path), GetEntry(path), out length);
         }
 
-        static BinaryReader GetBytes(string file, TACEntry e, out int length)
+        static BinaryReader GetBytes(string file, TACEntry e, out uint length)
         {
             var br = new BinaryReader(new FileStream(file, FileMode.Open));
             br.BaseStream.Seek(e.m_offset, SeekOrigin.Begin);
@@ -244,9 +248,9 @@ namespace Shenmunity
                     var r = new TACEntry();
 
                     reader.BaseStream.Seek(4, SeekOrigin.Current); //skip padding (at file begin)
-                    r.m_offset = BitConverter.ToInt32(reader.ReadBytes(4), 0);
+                    r.m_offset = reader.ReadUInt32();
                     reader.BaseStream.Seek(4, SeekOrigin.Current); //skip padding
-                    r.m_length = BitConverter.ToInt32(reader.ReadBytes(4), 0);
+                    r.m_length = reader.ReadUInt32();
                     reader.BaseStream.Seek(4, SeekOrigin.Current); //skip padding
                     var hash = BitConverter.ToString(reader.ReadBytes(4)).Replace("-", "");
                     reader.BaseStream.Seek(8, SeekOrigin.Current); //skip padding
@@ -273,6 +277,8 @@ namespace Shenmunity
         {
             m_byType = new Dictionary<FileType, List<TACEntry>>();
 
+            var unknown = new Dictionary<string, bool>();
+
             foreach (var tac in m_files.Keys)
             {
                 using (BinaryReader reader = new BinaryReader(new FileStream(GetTAC(tac), FileMode.Open)))
@@ -281,15 +287,22 @@ namespace Shenmunity
                     {
                         reader.BaseStream.Seek(e.m_offset, SeekOrigin.Begin);
                         string type = Encoding.ASCII.GetString(reader.ReadBytes(4));
-                        for(int i = 0; i < (int)FileType.COUNT; i++)
+                        bool found = false;
+                        for (int i = 0; !found && i < (int)FileType.COUNT; i++)
                         {
-                            foreach(var id in s_identifier[i])
+                            foreach (var id in s_identifier[i])
                             {
                                 if(string.Compare(id, 0, type, 0, id.Length) == 0)
                                 {
                                     GetFiles((FileType)i).Add(e);
+                                    found = true;
+                                    break;
                                 }
                             }
+                        }
+                        if(!found)
+                        {
+                            unknown[type] = true;
                         }
                     }
                 }

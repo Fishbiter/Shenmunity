@@ -20,7 +20,7 @@ namespace Shenmunity
 
         public MeshMode m_meshMode;
 
-        [SerializeField]
+        [SerializeField][HideInInspector]
         string m_pathCreated;
 
         public const float SHENMUE_FLIP = -1.0f;
@@ -265,7 +265,7 @@ namespace Shenmunity
                 int nodeBoneIndex = Array.IndexOf(bones, allNodes[node.id]);
                 foreach (var strip in node.m_strips)
                 {
-                    if (strip.m_texture < allMats.Length) //materials out side this bound appear to be volumes of some kind... maybe PVS blockers?
+                    if (strip.m_texture >= 0 && strip.m_texture < allMats.Length) //materials out side this bound appear to be volumes of some kind... maybe PVS blockers?
                     {
                         usedMaterials[strip.m_texture] = true;
                     }
@@ -465,7 +465,49 @@ namespace Shenmunity
         {
             var hd = new HumanDescription();
 
-            var mapping = new List<HumanBone>();
+            var sts = GetComponentsInChildren<ShenmueTransform>();
+
+            SkeletonBone[] skbones = new SkeletonBone[sts.Length];
+
+            for (int i = 0; i < sts.Length; i++)
+            {
+                skbones[i] = new SkeletonBone();
+                skbones[i].name = sts[i].name;
+                var t = sts[i].transform;
+                skbones[i].position = t.localPosition;
+                skbones[i].rotation = t.localRotation;
+                skbones[i].scale = t.localScale;
+            }
+
+            var transforms = new List<ShenmueTransform>();
+            foreach (var st in sts)
+            {
+                if (!string.IsNullOrEmpty(st.m_humanBone))
+                {
+                    transforms.Add(st);
+                }
+            }
+
+            HumanBone[] hbones = new HumanBone[transforms.Count];
+
+            for(int i = 0; i < transforms.Count; i++)
+            {
+                hbones[i] = new HumanBone();
+                hbones[i].boneName = transforms[i].name;
+                hbones[i].humanName = transforms[i].m_humanBone;
+                hbones[i].limit.useDefaultValues = true;
+            }
+
+            hd.human = hbones;
+            hd.skeleton = skbones;
+
+            var avatar = AvatarBuilder.BuildHumanAvatar(gameObject, hd);
+            var anim = GetComponent<Animator>();
+            if(!anim)
+            {
+                anim = gameObject.AddComponent<Animator>();
+            }
+            anim.avatar = avatar;
         }
     }
 
@@ -480,10 +522,10 @@ namespace Shenmunity
 
             smar.DoInspectorGUI(TACReader.FileType.MODEL);
 
-            //if(GUILayout.Button("Create Avatar"))
-            //{
-            //    smar.CreateAvatar();
-            //}
+            if(GUILayout.Button("Create Avatar"))
+            {
+                smar.CreateAvatar();
+            }
 
             if(GUILayout.Button("Set Mesh Collider for all visible nodes"))
             {

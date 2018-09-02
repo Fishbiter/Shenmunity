@@ -198,13 +198,13 @@ namespace Shenmunity
 
         public MT5(string path)
         {
-            int len = 0;
+            uint len = 0;
 
             using (m_reader = TACReader.GetBytes(path, out len))
             {
                 m_base = m_reader.BaseStream.Seek(0, SeekOrigin.Current);
 
-                var bytes = m_reader.ReadBytes(len);
+                var bytes = m_reader.ReadBytes((int)len);
                 File.WriteAllBytes("model.bin", bytes);
 
                 Seek(-len, SeekOrigin.Current);

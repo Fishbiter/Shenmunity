@@ -5,7 +5,7 @@ Shenmue/disk/F758452F Kitty
 Shenmue/disk/2A83FD10 Chihuahua (UV Stretching)
 Shenmue/disk/408868EE Sakuragaoka
 Shenmue/disk/31D46ED4 Dojo
-Shenmue/disk/6C0B2E98 Book(invalid verts)
+Shenmue/disk/6C0B2E98 Book
 Shenmue/disk/9C75C93C HongKongFlier
 Shenmue/disk/C04F7244 Yamanose
 Shenmue/disk/2D485480 HarborWater?
@@ -28,6 +28,7 @@ Shenmue/disk/B01D282F TaiChi
 Shenmue/disk/68C50971 Dojo
 Shenmue/disk/FE05890B TrayWithCups
 Shenmue/disk/5AE7755E Cement
+Shenmue/disk/DCEDEAB9 HarborBuildings
 Shenmue/disk/3D86695E Bus
 Shenmue/disk/33042D68 Vest
 Shenmue/disk/30E87E7F Broom

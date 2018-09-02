@@ -124,25 +124,25 @@ namespace Shenmunity
 
             m_boneScroll = GUILayout.BeginScrollView(m_boneScroll);
 
-            //GUILayout.BeginHorizontal();
-            //GUILayout.BeginVertical();
-            //
-            //DoBoneName(st, "");
-            //int index = 0;
-            //int count = HumanTrait.BoneName.Length;
-            //foreach (var boneName in HumanTrait.BoneName)
-            //{
-            //    DoBoneName(st, boneName);
-            //
-            //    if ((index++ % (count / 3 + 1)) == count / 3)
-            //    {
-            //        GUILayout.EndVertical();
-            //        GUILayout.BeginVertical();
-            //    }
-            //}
-            //
-            //GUILayout.EndVertical();
-            //GUILayout.EndHorizontal();
+            GUILayout.BeginHorizontal();
+            GUILayout.BeginVertical();
+            
+            DoBoneName(st, "");
+            int index = 0;
+            int count = HumanTrait.BoneName.Length;
+            foreach (var boneName in HumanTrait.BoneName)
+            {
+                DoBoneName(st, boneName);
+            
+                if ((index++ % (count / 3 + 1)) == count / 3)
+                {
+                    GUILayout.EndVertical();
+                    GUILayout.BeginVertical();
+                }
+            }
+            
+            GUILayout.EndVertical();
+            GUILayout.EndHorizontal();
 
             GUILayout.EndScrollView();
         }

@@ -151,6 +151,7 @@ namespace Shenmunity
                 switch (stripType)
                 {
                     case 0x2e:
+                    case 0x2f: //just vert ids (no UV or Col)
                     case 0x0a:
                         p3 = br.ReadInt16();
                         p4 = br.ReadInt16();
@@ -170,20 +171,23 @@ namespace Shenmunity
                 p10 = br.ReadInt16();
                 textureNumber = br.ReadInt16();
 
-                p12 = br.ReadInt16();
-                p13 = br.ReadInt16();
+                if (stripType != 0x2f)
+                {
+                    p12 = br.ReadInt16();
+                    p13 = br.ReadInt16();
+                }
                 stripFormat = br.ReadInt16();
-                blockSize = br.ReadInt16();
+                blockSize = br.ReadUInt16();
                 numberStrips = br.ReadInt16();
             }
 
             public short p0;
             public short mustBe16;
             public short stripType;
-            public short p3;//only in UV strips (maybe UV mode?)
-            public short p4;//only in UV strips (maybe UV mode?)
-            public short p5;//only in UV strips (maybe UV mode?)
-            public short p6;//only in UV strips (maybe UV mode?)
+            public short p3;
+            public short p4;
+            public short p5;
+            public short p6; 
             public short polyMode;
             public short p8;
             public short p9;
@@ -192,7 +196,7 @@ namespace Shenmunity
             public short p12;
             public short p13;
             public short stripFormat;
-            public short blockSize;
+            public ushort blockSize;
             public short numberStrips;
         }
 
@@ -302,6 +306,14 @@ namespace Shenmunity
         {
             return m_reader.BaseStream.Seek(0, SeekOrigin.Current) - m_base;
         }
+
+        string Peek() //for debugging
+        {
+            long pos = GetPos();
+            string str = BitConverter.ToString(m_reader.ReadBytes(64));
+            Seek(pos, SeekOrigin.Begin);
+            return str;
+        }
         
 
         Node ReadObjectHeader()
@@ -358,15 +370,18 @@ namespace Shenmunity
                     int rawVert = m_reader.ReadInt16();
                     fv.m_vertIndex = rawVert;
 
-                    if(stripHeader.stripFormat >= 0x11)
+                    if (stripHeader.stripFormat != 0x13)
                     {
-                        fv.m_uv.x = (float)(m_reader.ReadInt16()) / 0x3ff;
-                        fv.m_uv.y = (float)(m_reader.ReadInt16()) / 0x3ff;
-                    }
-                    if (stripHeader.stripFormat >= 0x1c)
-                    {
-                        fv.m_col.x = m_reader.ReadInt16();
-                        fv.m_col.y = m_reader.ReadInt16();
+                        if (stripHeader.stripFormat >= 0x11)
+                        {
+                            fv.m_uv.x = (float)(m_reader.ReadInt16()) / 0x3ff;
+                            fv.m_uv.y = (float)(m_reader.ReadInt16()) / 0x3ff;
+                        }
+                        if (stripHeader.stripFormat >= 0x1c)
+                        {
+                            fv.m_col.x = m_reader.ReadInt16();
+                            fv.m_col.y = m_reader.ReadInt16();
+                        }
                     }
                     face.m_stripVerts.Add(fv);
                     node.m_totalStripVerts++;

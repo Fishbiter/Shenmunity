@@ -7,18 +7,29 @@ namespace Shenmunity
 {
     public class TACFileSelector : EditorWindow
     {
-        List<TACReader.TACEntry> m_list;
-        ShenmueAssetRef m_ref;
+        static List<TACReader.TACEntry> m_list;
+        static ShenmueAssetRef m_ref;
         static Vector2 m_scroll;
         static bool m_showNamed;
         static string m_search;
+
+        enum SortBy
+        {
+            Path,
+            Name,
+            Largest,
+            Smallest,
+
+            Count
+        };
+        static SortBy m_sortBy = SortBy.Path;
 
         static public void SelectFile(TACReader.FileType type, ShenmueAssetRef outRef)
         {
             // Get existing open window or if none, make a new one:
             TACFileSelector window = (TACFileSelector)EditorWindow.GetWindow(typeof(TACFileSelector));
             window.ListFiles(type);
-            window.m_ref = outRef;
+            m_ref = outRef;
             window.Show();
         }
 
@@ -49,6 +60,7 @@ namespace Shenmunity
         void ListFiles(TACReader.FileType type)
         {
             m_list = TACReader.GetFiles(type);
+            SortList();
         }
 
         void OnGUI()
@@ -62,6 +74,23 @@ namespace Shenmunity
             m_showNamed = GUILayout.Toggle(m_showNamed, "Only show named");
             m_search = GUILayout.TextField(m_search);
 
+            using (new GUILayout.HorizontalScope())
+            {
+                GUILayout.Label("SortBy:");
+                SortBy oldSortBy = m_sortBy;
+                for (int i = 0; i < (int)SortBy.Count; i++)
+                {
+                    if (GUILayout.Toggle(m_sortBy == (SortBy)i, ((SortBy)i).ToString()))
+                    {
+                        m_sortBy = (SortBy)i;
+                    }
+                }
+                if(m_sortBy != oldSortBy)
+                {
+                    SortList();
+                }
+            }
+
             m_scroll = GUILayout.BeginScrollView(m_scroll);
             bool none = true;
 
@@ -70,7 +99,7 @@ namespace Shenmunity
                 if (m_showNamed && string.IsNullOrEmpty(r.m_name))
                     continue;
                  
-                if (!string.IsNullOrEmpty(m_search) && (string.IsNullOrEmpty(r.m_name) || r.m_name.IndexOf(m_search) == -1))
+                if (!string.IsNullOrEmpty(m_search) && (string.IsNullOrEmpty(r.m_name) || r.m_name.IndexOf(m_search, System.StringComparison.OrdinalIgnoreCase) == -1))
                     continue;
 
                 if (GUILayout.Button(string.Format("{0} {1} ({2}kb)", r.m_path, r.m_name, r.m_length/1000)))
@@ -85,6 +114,34 @@ namespace Shenmunity
                 GUILayout.Label(string.Format("'{0}' not found", m_search));
 
             GUILayout.EndScrollView();
+        }
+
+        static void SortList()
+        {
+            switch (m_sortBy)
+            {
+                case SortBy.Path:
+                    m_list.Sort((x, y) => string.Compare(x.m_path, y.m_path));
+                    break;
+                case SortBy.Name:
+                    m_list.Sort((x, y) =>
+                    {
+                        int leftIsName = !string.IsNullOrEmpty(x.m_name) ? 1 : 0;
+                        int rightIsName = !string.IsNullOrEmpty(y.m_name) ? 1 : 0;
+                        if (leftIsName == 1 && rightIsName == 1)
+                        {
+                            return string.Compare(x.m_name, y.m_name, System.StringComparison.OrdinalIgnoreCase);
+                        }
+                        return rightIsName - leftIsName;
+                    });
+                    break;
+                case SortBy.Smallest:
+                    m_list.Sort((x, y) => (int)(x.m_length - y.m_length));
+                    break;
+                case SortBy.Largest:
+                    m_list.Sort((x, y) => (int)(y.m_length - x.m_length));
+                    break;
+            }
         }
     }
 }

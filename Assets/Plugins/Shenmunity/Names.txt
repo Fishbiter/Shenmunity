@@ -9,13 +9,14 @@ Shenmue/disk/6C0B2E98 Book
 Shenmue/disk/9C75C93C HongKongFlier
 Shenmue/disk/C04F7244 Yamanose
 Shenmue/disk/2D485480 HarborWater?
-Shenmue/disk/FFD24437 Warehouse
+Shenmue/disk/FFD24437 Warehouse8
 Shenmue/disk/83B92E25 YoungRyu
 Shenmue/disk/8F827444 Matchbox
 Shenmue/disk/D2F726B1 HarborEntrance
 Shenmue/disk/A8CEDB5C SnowyDobuita
 Shenmue/disk/301C2A6E TravelAgent
 Shenmue/disk/61413F28 DojoInterior
+Shenmue/disk/B0C06826 DobuitaLower
 Shenmue/disk/AE07760B Ship
 Shenmue/disk/45165932 Ryu
 Shenmue/disk/AC58EB99 ChinaShop

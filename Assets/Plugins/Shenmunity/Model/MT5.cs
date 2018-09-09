@@ -314,7 +314,16 @@ namespace Shenmunity
             Seek(pos, SeekOrigin.Begin);
             return str;
         }
-        
+
+        string PeekBehind() //for debugging
+        {
+            long pos = GetPos();
+            Seek(-64, SeekOrigin.Current);
+            string str = BitConverter.ToString(m_reader.ReadBytes(64));
+            Seek(pos, SeekOrigin.Begin);
+            return str;
+        }
+
 
         Node ReadObjectHeader()
         {

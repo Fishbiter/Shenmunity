@@ -39,7 +39,12 @@ namespace Shenmunity
             new string[] { "DXBC" }, //DXBC
             new string[] { "PAKS" }, //PAKS
             new string[] { "PAKF" }, //PAKF
-            new string[] { "MDP7", "MDC7", "HRCM" }, //MODEL,
+            new string[] { "MDP7", "MDC7", "HRCM",
+            //    "MDOX", //unlikely to be model data (maybe texture?)
+            //    "MDLX",
+            //    "MDCX",
+            //    "MDPX"
+            }, //MODEL,
             new string[] { "DTPK" },//SND
             new string[] { "GBIX", "TEXN" },//PVR
             new string[] { "PAWN" },//PAWN
@@ -56,7 +61,7 @@ namespace Shenmunity
         static Dictionary<string, string> s_sources = new Dictionary<string, string>
         {
             { "Shenmue", "sm1/archives/dx11/data" },
-            { "Shenmue2", "sm2/archives/dx11/data" },
+           // { "Shenmue2", "sm2/archives/dx11/data" },
         };
 
         static string s_namesFile = "Assets/Plugins/Shenmunity/Names.txt";
@@ -295,6 +300,7 @@ namespace Shenmunity
                                 if(string.Compare(id, 0, type, 0, id.Length) == 0)
                                 {
                                     GetFiles((FileType)i).Add(e);
+                                    e.m_name = type;
                                     found = true;
                                     break;
                                 }

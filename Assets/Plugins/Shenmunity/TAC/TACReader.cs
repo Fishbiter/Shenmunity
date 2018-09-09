@@ -39,7 +39,7 @@ namespace Shenmunity
             new string[] { "DXBC" }, //DXBC
             new string[] { "PAKS" }, //PAKS
             new string[] { "PAKF" }, //PAKF
-            new string[] { "MDP7", "MDC7", "HRCM",
+            new string[] { "MDP7", "MDC7", "HRCM", "CHRM", "MAPM",
             //    "MDOX", //unlikely to be model data (maybe texture?)
             //    "MDLX",
             //    "MDCX",
@@ -49,6 +49,8 @@ namespace Shenmunity
             new string[] { "GBIX", "TEXN" },//PVR
             new string[] { "PAWN" },//PAWN
         };
+
+        static Dictionary<string, long> s_textureLib = new Dictionary<string, long>();
 
         public class TACEntry
         {
@@ -69,6 +71,8 @@ namespace Shenmunity
         static Dictionary<string, Dictionary<string, TACEntry>> m_files;
         static Dictionary<string, string> m_tacToFilename = new Dictionary<string, string>();
         static Dictionary<FileType, List<TACEntry>> m_byType;
+        static Dictionary<string, int> m_unknownTypes;
+
 
         static public List<TACEntry> GetFiles(FileType type)
         {
@@ -195,7 +199,7 @@ namespace Shenmunity
 
         static BinaryReader GetBytes(string file, TACEntry e, out uint length)
         {
-            var br = new BinaryReader(new FileStream(file, FileMode.Open));
+            var br = new BinaryReader(new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.Read));
             br.BaseStream.Seek(e.m_offset, SeekOrigin.Begin);
             length = e.m_length;
             return br;
@@ -243,7 +247,7 @@ namespace Shenmunity
             m_files[tacName] = dir;
             m_tacToFilename[tacName] = Path.GetFileName(tac);
 
-            using (BinaryReader reader = new BinaryReader(new FileStream(tadFile, FileMode.Open)))
+            using (BinaryReader reader = new BinaryReader(new FileStream(tadFile, FileMode.Open, FileAccess.Read, FileShare.Read)))
             {
                 //skip header
                 reader.BaseStream.Seek(72, SeekOrigin.Current);
@@ -278,41 +282,152 @@ namespace Shenmunity
             return m_files;
         }
         
+        static void ExtractFile(TACEntry entry)
+        {
+            uint len;
+            var br = GetBytes(entry.m_path, out len);
+            var path = Directory.GetCurrentDirectory();
+            Directory.CreateDirectory(Path.GetDirectoryName(path + "/" + entry.m_path));
+            File.WriteAllBytes(path + "/" + entry.m_path, br.ReadBytes((int)len));
+        }
+
         static void BuildTypes()
         {
             m_byType = new Dictionary<FileType, List<TACEntry>>();
-
-            var unknown = new Dictionary<string, bool>();
+            m_unknownTypes = new Dictionary<string, int>();
 
             foreach (var tac in m_files.Keys)
             {
-                using (BinaryReader reader = new BinaryReader(new FileStream(GetTAC(tac), FileMode.Open)))
+                using (BinaryReader reader = new BinaryReader(new FileStream(GetTAC(tac), FileMode.Open, FileAccess.Read, FileShare.Read)))
                 {
-                    foreach(var e in m_files[tac].Values)
+                    foreach (var e in m_files[tac].Values.ToArray())
                     {
                         reader.BaseStream.Seek(e.m_offset, SeekOrigin.Begin);
                         string type = Encoding.ASCII.GetString(reader.ReadBytes(4));
-                        bool found = false;
-                        for (int i = 0; !found && i < (int)FileType.COUNT; i++)
+                        AddEntryToType(type, e);
+
+                        if (type == "PAKS")
                         {
-                            foreach (var id in s_identifier[i])
-                            {
-                                if(string.Compare(id, 0, type, 0, id.Length) == 0)
-                                {
-                                    GetFiles((FileType)i).Add(e);
-                                    e.m_name = type;
-                                    found = true;
-                                    break;
-                                }
-                            }
+                            ReadPAKS(tac, e, reader);
                         }
-                        if(!found)
+                        else if(type == "PAKF")
                         {
-                            unknown[type] = true;
+                            ReadPAKF(tac, e, reader);
                         }
                     }
                 }
             }
+        }
+
+        static void AddEntryToType(string type, TACEntry e)
+        {
+            for (int i = 0; i < (int)FileType.COUNT; i++)
+            {
+                foreach (var id in s_identifier[i])
+                {
+                    if (string.Compare(id, 0, type, 0, id.Length) == 0)
+                    {
+                        GetFiles((FileType)i).Add(e);
+                        e.m_name = type;
+                        return;
+                    }
+                }
+            }
+
+            if (!m_unknownTypes.ContainsKey(type))
+                m_unknownTypes[type] = 0;
+            m_unknownTypes[type]++;
+        }
+
+        static void ReadPAKS(string tac, TACEntry parent, BinaryReader r)
+        {
+            uint paksSize = r.ReadUInt32();
+            uint c1 = r.ReadUInt32();
+            uint c2 = r.ReadUInt32();
+
+            ReadIPAC(tac, parent, r);
+        }
+
+        static void ReadPAKF(string tac, TACEntry parent, BinaryReader r)
+        {
+            uint pakfSize = r.ReadUInt32();
+            uint c1 = r.ReadUInt32();
+            uint numTextures = r.ReadUInt32();
+            string magic = null;
+
+            if(numTextures > 0)
+            {
+                do
+                {
+                    long blockStart = r.BaseStream.Seek(0, SeekOrigin.Current);
+                    magic = Encoding.ASCII.GetString(r.ReadBytes(4));
+                    long end = blockStart + r.ReadUInt32();
+                    switch (magic)
+                    {
+                        case "DUMY":
+                            break;
+                        case "TEXN":
+                            uint number = r.ReadUInt32();
+                            string name = Encoding.ASCII.GetString(r.ReadBytes(4)) + number;
+                            s_textureLib[name] = blockStart + 8;
+                            break;
+
+                    }
+                    r.BaseStream.Seek(end, SeekOrigin.Begin);
+                }
+                while (magic[0] != 0 && magic != "IPAC");
+            }
+            r.BaseStream.Seek(parent.m_offset + pakfSize, SeekOrigin.Begin);
+            ReadIPAC(tac, parent, r);
+        }
+
+        static void ReadIPAC(string tac, TACEntry parent, BinaryReader r)
+        {
+            var parentHash = parent.m_path.Split('/')[2];
+
+            string magic = Encoding.ASCII.GetString(r.ReadBytes(4));
+            if (magic != "IPAC")
+            {
+                return;
+            }
+            uint size1 = r.ReadUInt32();
+            uint num = r.ReadUInt32();
+            uint size2 = r.ReadUInt32();
+
+            r.BaseStream.Seek(size1 - 16, SeekOrigin.Current);
+
+            for (int i = 0; i < num; i++)
+            {
+                string fn = Encoding.ASCII.GetString(r.ReadBytes(8));
+                string ext = Encoding.ASCII.GetString(r.ReadBytes(4));
+                uint ofs = r.ReadUInt32();
+                uint length = r.ReadUInt32();
+
+                TACEntry newE = new TACEntry();
+
+                newE.m_path = parent.m_path + "_" + fn;
+                newE.m_name = fn + "." + ext;
+                newE.m_offset = parent.m_offset + ofs + 16;
+                newE.m_length = length;
+
+                string hash = parentHash + "_" + fn;
+                int fnIndex = 1;
+
+                while (m_files[tac].ContainsKey(hash))
+                {
+                    hash = parentHash + "_" + fn + fnIndex;
+                    newE.m_path = parent.m_path + "_" + fn + fnIndex;
+                    fnIndex++;
+                }
+
+                m_files[tac].Add(hash, newE);
+                AddEntryToType(ext, newE);
+            }
+        }
+
+        static public long GetTextureAddress(string name)
+        {
+            return s_textureLib[name];
         }
     }
 }

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text;
 using UnityEngine;
 
 namespace Shenmunity
@@ -159,6 +160,7 @@ namespace Shenmunity
                         p6 = br.ReadInt16();
                         break;
                     case 0x26:
+                    case 0x2:
                         break;
                     default:
                         Debug.LogWarningFormat("Unknown strip type {0}", stripType);
@@ -563,25 +565,48 @@ namespace Shenmunity
 
             for(int i = 0; i < numberTextures; i++)
             {
-                Seek(4, SeekOrigin.Current); //"TEXN"
-                long end = GetPos() + m_reader.ReadInt32() - 4;
-                int unknown1 = m_reader.ReadInt32(); //unknown (address?)
-                int unknown2 = m_reader.ReadInt32(); //unknown (address?)
-                Seek(4, SeekOrigin.Current); //"GBIX"
-                long gbixLen = m_reader.ReadInt32();
-                long gbix = m_reader.ReadInt64();
+                string texNode = Encoding.ASCII.GetString(m_reader.ReadBytes(4));
+                uint len = m_reader.ReadUInt32();
 
-                var pvrt = new PVRT(m_reader);
+                long end = GetPos() + len - 8;
 
-                var tex = new Texture();
-                tex.m_type = pvrt.type;
-                tex.m_width = pvrt.width;
-                tex.m_height = pvrt.height;
-                tex.m_texels = pvrt.texels;
-                m_textures.Add(tex);
-
+                if (texNode == "TEXN")
+                {
+                    m_textures.Add(ReadTextureNode());
+                }
+                else if(texNode == "NAME")
+                {
+                    for (i = 0; i < ((len - 8) / 8); i++)
+                    {
+                        uint number = m_reader.ReadUInt32();
+                        string name = Encoding.ASCII.GetString(m_reader.ReadBytes(4)) + number;
+                        long addr = TACReader.GetTextureAddress(name);
+                        long returnTo = GetPos();
+                        m_reader.BaseStream.Seek(addr, SeekOrigin.Begin); //nb. seek in whole tac
+                        m_textures.Add(ReadTextureNode());
+                        Seek(returnTo, SeekOrigin.Begin);
+                    }
+                }
                 Seek(end, SeekOrigin.Begin);
             }
+        }
+
+        Texture ReadTextureNode()
+        {
+            string name = Encoding.ASCII.GetString(m_reader.ReadBytes(8));
+            Seek(4, SeekOrigin.Current); //"GBIX"
+            long gbixLen = m_reader.ReadInt32();
+            long gbix = m_reader.ReadInt64();
+
+            var pvrt = new PVRT(m_reader);
+
+            var tex = new Texture();
+            tex.m_type = pvrt.type;
+            tex.m_width = pvrt.width;
+            tex.m_height = pvrt.height;
+            tex.m_texels = pvrt.texels;
+
+            return tex;
         }
     }
 }

@@ -2,6 +2,7 @@ using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Text;
 
@@ -50,7 +51,13 @@ namespace Shenmunity
             new string[] { "PAWN" },//PAWN
         };
 
-        static Dictionary<string, long> s_textureLib = new Dictionary<string, long>();
+        public struct TextureEntry
+        {
+            public TACEntry m_file;
+            public long m_postion;
+        };
+
+        static Dictionary<string, TextureEntry> s_textureLib = new Dictionary<string, TextureEntry>();
 
         public class TACEntry
         {
@@ -58,6 +65,8 @@ namespace Shenmunity
             public string m_name;
             public uint m_offset;
             public uint m_length;
+            public bool m_zipped;
+            public TACEntry m_parent;
         }
 
         static Dictionary<string, string> s_sources = new Dictionary<string, string>
@@ -199,10 +208,25 @@ namespace Shenmunity
 
         static BinaryReader GetBytes(string file, TACEntry e, out uint length)
         {
-            var br = new BinaryReader(new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.Read));
-            br.BaseStream.Seek(e.m_offset, SeekOrigin.Begin);
-            length = e.m_length;
-            return br;
+            if(e.m_parent != null && e.m_parent.m_zipped)
+            {
+                var parent = GetBytes(file, e.m_parent, out length);
+                parent.BaseStream.Seek(e.m_offset, SeekOrigin.Begin);
+                return parent;
+            }
+            else
+            {
+                var br = new BinaryReader(new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.Read));
+                br.BaseStream.Seek((e.m_parent != null ? e.m_parent.m_offset : 0) + e.m_offset, SeekOrigin.Begin);
+                length = e.m_length;
+
+                if(e.m_zipped)
+                {
+                    br = new BinaryReader(new GzipWithSeek(br.BaseStream, CompressionMode.Decompress));
+                }
+
+                return br;
+            }
         }
 
 
@@ -298,12 +322,26 @@ namespace Shenmunity
 
             foreach (var tac in m_files.Keys)
             {
-                using (BinaryReader reader = new BinaryReader(new FileStream(GetTAC(tac), FileMode.Open, FileAccess.Read, FileShare.Read)))
+                using (BinaryReader rawReader = new BinaryReader(new FileStream(GetTAC(tac), FileMode.Open, FileAccess.Read, FileShare.Read)))
                 {
                     foreach (var e in m_files[tac].Values.ToArray())
                     {
+                        var reader = rawReader;
                         reader.BaseStream.Seek(e.m_offset, SeekOrigin.Begin);
-                        string type = Encoding.ASCII.GetString(reader.ReadBytes(4));
+                        var header = reader.ReadBytes(4);
+                        string type = Encoding.ASCII.GetString(header);
+
+                        bool zipped = header[0] == 0x1f && header[1] == 0x8b;
+                        if (zipped)
+                        {
+                            reader.BaseStream.Seek(-4, SeekOrigin.Current);
+                            reader = new BinaryReader(new GzipWithSeek(reader.BaseStream, CompressionMode.Decompress));
+                            header = reader.ReadBytes(4);
+                            type = Encoding.ASCII.GetString(header);
+
+                            e.m_zipped = true;
+                        }
+
                         AddEntryToType(type, e);
 
                         if (type == "PAKS")
@@ -359,7 +397,7 @@ namespace Shenmunity
             {
                 do
                 {
-                    long blockStart = r.BaseStream.Seek(0, SeekOrigin.Current);
+                    long blockStart = r.BaseStream.Position;
                     magic = Encoding.ASCII.GetString(r.ReadBytes(4));
                     long end = blockStart + r.ReadUInt32();
                     switch (magic)
@@ -369,15 +407,27 @@ namespace Shenmunity
                         case "TEXN":
                             uint number = r.ReadUInt32();
                             string name = Encoding.ASCII.GetString(r.ReadBytes(4)) + number;
-                            s_textureLib[name] = blockStart + 8;
+                            var texEntry = new TextureEntry();
+                            texEntry.m_file = parent;
+                            texEntry.m_postion = blockStart + 8;
+                            if(!parent.m_zipped)
+                            {
+                                texEntry.m_postion -= parent.m_offset;
+                            }
+
+                            s_textureLib[name] = texEntry;
                             break;
 
                     }
+                    if (magic[0] == 0 || magic == "IPAC")
+                    {
+                        break;
+                    }
                     r.BaseStream.Seek(end, SeekOrigin.Begin);
                 }
-                while (magic[0] != 0 && magic != "IPAC");
+                while (true);
             }
-            r.BaseStream.Seek(parent.m_offset + pakfSize, SeekOrigin.Begin);
+            r.BaseStream.Seek((parent.m_zipped ? 0 : parent.m_offset) + pakfSize, SeekOrigin.Begin);
             ReadIPAC(tac, parent, r);
         }
 
@@ -398,8 +448,8 @@ namespace Shenmunity
 
             for (int i = 0; i < num; i++)
             {
-                string fn = Encoding.ASCII.GetString(r.ReadBytes(8));
-                string ext = Encoding.ASCII.GetString(r.ReadBytes(4));
+                string fn = Encoding.ASCII.GetString(r.ReadBytes(8)).Trim('\0');
+                string ext = Encoding.ASCII.GetString(r.ReadBytes(4)).Trim('\0');
                 uint ofs = r.ReadUInt32();
                 uint length = r.ReadUInt32();
 
@@ -407,8 +457,9 @@ namespace Shenmunity
 
                 newE.m_path = parent.m_path + "_" + fn;
                 newE.m_name = fn + "." + ext;
-                newE.m_offset = parent.m_offset + ofs + 16;
+                newE.m_offset = ofs + 16;
                 newE.m_length = length;
+                newE.m_parent = parent;
 
                 string hash = parentHash + "_" + fn;
                 int fnIndex = 1;
@@ -425,9 +476,13 @@ namespace Shenmunity
             }
         }
 
-        static public long GetTextureAddress(string name)
+        static public BinaryReader GetTextureAddress(string name)
         {
-            return s_textureLib[name];
+            var e = s_textureLib[name];
+            uint len = 0;
+            var br = GetBytes(e.m_file.m_path, out len);
+            br.BaseStream.Seek(e.m_postion, SeekOrigin.Current);
+            return br;
         }
     }
 }

@@ -145,8 +145,6 @@ namespace Shenmunity
         {
             public StripHeader(BinaryReader br)
             {
-                p0 = br.ReadInt16();
-                mustBe16 = br.ReadInt16();
                 stripType = br.ReadInt16();
 
                 switch (stripType)
@@ -183,8 +181,6 @@ namespace Shenmunity
                 numberStrips = br.ReadInt16();
             }
 
-            public short p0;
-            public short mustBe16;
             public short stripType;
             public short p3;
             public short p4;
@@ -209,11 +205,6 @@ namespace Shenmunity
             using (m_reader = TACReader.GetBytes(path, out len))
             {
                 m_base = m_reader.BaseStream.Seek(0, SeekOrigin.Current);
-
-                var bytes = m_reader.ReadBytes((int)len);
-                File.WriteAllBytes("model.bin", bytes);
-
-                Seek(-len, SeekOrigin.Current);
 
                 uint pos = ReadHeader();
                 GetNode(pos);
@@ -248,7 +239,6 @@ namespace Shenmunity
                         case 0x00100002:
                         case 0x00100003:
                         case 0x00100004:
-                            Seek(-4, SeekOrigin.Current);
                             ReadStrips(obj, footer.verticesNumber);
                             break;
                         case 0x0008000e:
@@ -362,9 +352,6 @@ namespace Shenmunity
             var stripHeader = new StripHeader(m_reader);
 
             long end = GetPos() + stripHeader.blockSize - 2;
-
-            if (stripHeader.mustBe16 != 0x10)
-                return;
 
             for (int i = 0; i < stripHeader.numberStrips; i++)
             {
@@ -580,11 +567,10 @@ namespace Shenmunity
                     {
                         uint number = m_reader.ReadUInt32();
                         string name = Encoding.ASCII.GetString(m_reader.ReadBytes(4)) + number;
-                        long addr = TACReader.GetTextureAddress(name);
-                        long returnTo = GetPos();
-                        m_reader.BaseStream.Seek(addr, SeekOrigin.Begin); //nb. seek in whole tac
+                        var restoreReader = m_reader;
+                        m_reader = TACReader.GetTextureAddress(name);
                         m_textures.Add(ReadTextureNode());
-                        Seek(returnTo, SeekOrigin.Begin);
+                        m_reader = restoreReader;
                     }
                 }
                 Seek(end, SeekOrigin.Begin);

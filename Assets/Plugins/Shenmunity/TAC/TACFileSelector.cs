@@ -12,6 +12,7 @@ namespace Shenmunity
         static Vector2 m_scroll;
         static bool m_showNamed;
         static string m_search;
+        static int m_offset;
 
         enum SortBy
         {
@@ -88,18 +89,43 @@ namespace Shenmunity
                 if(m_sortBy != oldSortBy)
                 {
                     SortList();
+                    m_offset = 0;
                 }
             }
 
             m_scroll = GUILayout.BeginScrollView(m_scroll);
             bool none = true;
 
-            foreach(var r in m_list)
+            int index = 0;
+
+            if (m_offset > 0)
+            {
+                if (GUILayout.Button("Prev..."))
+                {
+                    m_offset -= 1000;
+                }
+            }
+
+            foreach (var r in m_list)
             {
                 if (m_showNamed && string.IsNullOrEmpty(r.m_name))
                     continue;
                  
                 if (!string.IsNullOrEmpty(m_search) && (string.IsNullOrEmpty(r.m_name) || r.m_name.IndexOf(m_search, System.StringComparison.OrdinalIgnoreCase) == -1))
+                    continue;
+
+                none = false;
+
+                if (index > m_offset + 1000)
+                {
+                    if (GUILayout.Button("Next..."))
+                    {
+                        m_offset += 1000;
+                    }
+                    break;
+                }
+
+                if (index++ < m_offset)
                     continue;
 
                 if (GUILayout.Button(string.Format("{0} {1} ({2}kb)", r.m_path, r.m_name, r.m_length/1000)))
@@ -108,10 +134,15 @@ namespace Shenmunity
                     m_ref.OnChange();
                     Close();
                 }
-                none = false;
+                
             }
             if (none)
-                GUILayout.Label(string.Format("'{0}' not found", m_search));
+            {
+                if (m_offset > 0)
+                    m_offset = 0;
+                else
+                    GUILayout.Label(string.Format("'{0}' not found", m_search));
+            }
 
             GUILayout.EndScrollView();
         }

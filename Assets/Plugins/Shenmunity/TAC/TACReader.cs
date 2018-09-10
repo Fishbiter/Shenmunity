@@ -222,7 +222,15 @@ namespace Shenmunity
 
                 if(e.m_zipped)
                 {
-                    br = new BinaryReader(new GzipWithSeek(br.BaseStream, CompressionMode.Decompress));
+                    br.BaseStream.Seek(e.m_offset + e.m_length - 4, SeekOrigin.Begin);
+                    uint unzipLen = br.ReadUInt32();
+                    br.BaseStream.Seek(e.m_offset, SeekOrigin.Begin);
+
+                    var gzip = new GZipStream(br.BaseStream, CompressionMode.Decompress);
+                    byte[] bytes = new byte[unzipLen];
+                    gzip.Read(bytes, 0, (int)unzipLen);
+                    
+                    br = new BinaryReader(new MemoryStream(bytes));
                 }
 
                 return br;

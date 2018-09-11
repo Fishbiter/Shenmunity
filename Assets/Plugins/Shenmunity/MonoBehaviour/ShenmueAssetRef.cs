@@ -5,12 +5,12 @@ using UnityEditor;
 
 namespace Shenmunity
 {
-    public abstract class ShenmueAssetRef : MonoBehaviour
+    public class ShenmueAssetRef : MonoBehaviour
     {
         [HideInInspector]
         public string m_path;
 
-        public abstract void OnChange();
+        public virtual void OnChange() { }
 
 #if UNITY_EDITOR
         public void DoInspectorGUI(TACReader.FileType type)

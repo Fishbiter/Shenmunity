@@ -58,11 +58,13 @@ namespace Shenmunity
         };
 
         static Dictionary<string, TextureEntry> s_textureLib = new Dictionary<string, TextureEntry>();
+        static string s_textureNamespace = "";
 
         public class TACEntry
         {
             public string m_path;
             public string m_name;
+            public string m_type;
             public uint m_offset;
             public uint m_length;
             public bool m_zipped;
@@ -161,6 +163,11 @@ namespace Shenmunity
             return null;
         }
 
+        static public void SetTextureNamespace(string path)
+        {
+            s_textureNamespace = path;
+        }
+
         static public void SaveNames()
         {
             using (var file = File.CreateText(s_namesFile))
@@ -223,12 +230,12 @@ namespace Shenmunity
                 if(e.m_zipped)
                 {
                     br.BaseStream.Seek(e.m_offset + e.m_length - 4, SeekOrigin.Begin);
-                    uint unzipLen = br.ReadUInt32();
+                    length = br.ReadUInt32();
                     br.BaseStream.Seek(e.m_offset, SeekOrigin.Begin);
 
                     var gzip = new GZipStream(br.BaseStream, CompressionMode.Decompress);
-                    byte[] bytes = new byte[unzipLen];
-                    gzip.Read(bytes, 0, (int)unzipLen);
+                    byte[] bytes = new byte[length];
+                    gzip.Read(bytes, 0, (int)length);
                     
                     br = new BinaryReader(new MemoryStream(bytes));
                 }
@@ -314,13 +321,14 @@ namespace Shenmunity
             return m_files;
         }
         
-        static void ExtractFile(TACEntry entry)
+        static public void ExtractFile(TACEntry entry)
         {
             uint len;
             var br = GetBytes(entry.m_path, out len);
             var path = Directory.GetCurrentDirectory();
-            Directory.CreateDirectory(Path.GetDirectoryName(path + "/" + entry.m_path));
-            File.WriteAllBytes(path + "/" + entry.m_path, br.ReadBytes((int)len));
+            path += "/" + entry.m_path + "." + entry.m_type;
+            Directory.CreateDirectory(Path.GetDirectoryName(path));
+            File.WriteAllBytes(path, br.ReadBytes((int)len));
         }
 
         static void BuildTypes()
@@ -349,6 +357,8 @@ namespace Shenmunity
 
                             e.m_zipped = true;
                         }
+
+                        e.m_type = type;
 
                         AddEntryToType(type, e);
 
@@ -424,6 +434,7 @@ namespace Shenmunity
                             }
 
                             s_textureLib[name] = texEntry;
+                            s_textureLib[parent.m_path + name] = texEntry;
                             break;
 
                     }
@@ -468,6 +479,7 @@ namespace Shenmunity
                 newE.m_offset = ofs + 16;
                 newE.m_length = length;
                 newE.m_parent = parent;
+                newE.m_type = ext;
 
                 string hash = parentHash + "_" + fn;
                 int fnIndex = 1;
@@ -486,7 +498,7 @@ namespace Shenmunity
 
         static public BinaryReader GetTextureAddress(string name)
         {
-            var e = s_textureLib[name];
+            var e = s_textureLib.ContainsKey(s_textureNamespace + name) ? s_textureLib[s_textureNamespace + name] : s_textureLib[name];
             uint len = 0;
             var br = GetBytes(e.m_file.m_path, out len);
             br.BaseStream.Seek(e.m_postion, SeekOrigin.Current);

@@ -16,6 +16,15 @@ namespace Shenmunity
         public ShenmueAssetRef m_chrt = new ShenmueAssetRef();
         public ShenmueAssetRef m_paks = new ShenmueAssetRef();
 
+#if UNITY_EDITOR
+        [MenuItem("GameObject/Shenmunity/Scene (CHRT)", priority = 10)]
+        public static void Create()
+        {
+            var sm = new GameObject("Shenmue scene");
+            TACFileSelector.SelectFile(TACReader.FileType.CHRT, sm.AddComponent<ShenmueCHRT>().m_chrt);
+        }
+#endif
+
         public void OnChange()
         {
             if (string.IsNullOrEmpty(m_chrt.m_path) && string.IsNullOrEmpty(m_paks.m_path))

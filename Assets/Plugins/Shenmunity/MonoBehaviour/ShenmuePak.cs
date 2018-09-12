@@ -21,6 +21,15 @@ namespace Shenmunity
         [HideInInspector]
         public ShenmueAssetRef m_textureSet = new ShenmueAssetRef();
 
+#if UNITY_EDITOR
+        [MenuItem("GameObject/Shenmunity/Pack (PAKS)", priority = 10)]
+        public static void Create()
+        {
+            var sm = new GameObject("Shenmue pak");
+            TACFileSelector.SelectFile(TACReader.FileType.PAKS, sm.AddComponent<ShenmuePak>().m_pakRef);
+        }
+#endif
+
         public void OnChange()
         {
             if (m_models != null)

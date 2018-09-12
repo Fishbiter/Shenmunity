@@ -10,7 +10,6 @@ namespace Shenmunity
     {
         BinaryReader m_reader;
         int m_textureStart;
-        long m_base;
 
         public Dictionary<uint, Node> m_nodes = new Dictionary<uint, Node>();
         public List<Node> m_nodeInLoadOrder = new List<Node>();
@@ -198,20 +197,15 @@ namespace Shenmunity
             public short numberStrips;
         }
 
-        public MT5(string path)
+        public MT5(BinaryReader reader)
         {
-            uint len = 0;
+            m_reader = reader;
 
-            using (m_reader = TACReader.GetBytes(path, out len))
-            {
-                m_base = m_reader.BaseStream.Seek(0, SeekOrigin.Current);
+            uint pos = ReadHeader();
+            GetNode(pos);
 
-                uint pos = ReadHeader();
-                GetNode(pos);
-
-                Seek(m_textureStart, SeekOrigin.Begin);
-                ReadTextures();
-            }
+            Seek(m_textureStart, SeekOrigin.Begin);
+            ReadTextures();
         }
 
         Node GetNode(uint pos)
@@ -284,38 +278,13 @@ namespace Shenmunity
 
         void Seek(long pos, SeekOrigin origin)
         {
-            if(origin == SeekOrigin.Current)
-            {
-                m_reader.BaseStream.Seek(pos, SeekOrigin.Current);
-            }
-            else if(origin == SeekOrigin.Begin)
-            {
-                m_reader.BaseStream.Seek(pos + m_base, SeekOrigin.Begin);
-            }
+            m_reader.BaseStream.Seek(pos, origin);
         }
 
         long GetPos()
         {
-            return m_reader.BaseStream.Seek(0, SeekOrigin.Current) - m_base;
+            return m_reader.BaseStream.Position;
         }
-
-        string Peek() //for debugging
-        {
-            long pos = GetPos();
-            string str = BitConverter.ToString(m_reader.ReadBytes(64));
-            Seek(pos, SeekOrigin.Begin);
-            return str;
-        }
-
-        string PeekBehind() //for debugging
-        {
-            long pos = GetPos();
-            Seek(-64, SeekOrigin.Current);
-            string str = BitConverter.ToString(m_reader.ReadBytes(64));
-            Seek(pos, SeekOrigin.Begin);
-            return str;
-        }
-
 
         Node ReadObjectHeader()
         {

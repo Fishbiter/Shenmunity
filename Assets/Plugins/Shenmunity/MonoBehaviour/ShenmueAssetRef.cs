@@ -5,15 +5,26 @@ using UnityEditor;
 
 namespace Shenmunity
 {
-    public class ShenmueAssetRef : MonoBehaviour
+    [System.Serializable]
+    public class ShenmueAssetRef
     {
         [HideInInspector]
         public string m_path;
 
-        public virtual void OnChange() { }
+        public System.Action OnChange;
+
+        public ShenmueAssetRef()
+        {
+            OnChange = DoNothing;
+        }
+
+        void DoNothing()
+        {
+
+        }
 
 #if UNITY_EDITOR
-        public void DoInspectorGUI(TACReader.FileType type)
+        public void DoHeader()
         {
             if (!string.IsNullOrEmpty(m_path))
             {
@@ -32,6 +43,16 @@ namespace Shenmunity
                     }
                 }
             }
+        }
+
+        public void DoInspectorGUI(TACReader.FileType type, System.Action onchange, System.Action onchangevalue = null)
+        {
+            if (onchangevalue == null)
+                onchangevalue = onchange;
+
+            OnChange = onchangevalue;
+
+            DoHeader();
 
             using (new GUILayout.HorizontalScope())
             {
@@ -48,7 +69,9 @@ namespace Shenmunity
                     TACFileSelector.SwitchAsset(type, this, 1);
                 }
             }
-            if (GUILayout.Button("Reload model"))
+            OnChange = onchange;
+
+            if (OnChange != DoNothing && GUILayout.Button("Reload model"))
             {
                 OnChange();
             }

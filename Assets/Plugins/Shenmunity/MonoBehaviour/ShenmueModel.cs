@@ -9,8 +9,11 @@ using UnityEditor;
 namespace Shenmunity
 {
     [ExecuteInEditMode][SelectionBase]
-    public class ShenmueModel : ShenmueAssetRef
+    public class ShenmueModel : MonoBehaviour
     {
+        [HideInInspector]
+        public ShenmueAssetRef m_assetRef = new ShenmueAssetRef();
+
         public enum MeshMode
         {
             Skinned,
@@ -32,16 +35,27 @@ namespace Shenmunity
         public static void CreateShenmueModel()
         {
             var sm = new GameObject("Shenmue model");
-            TACFileSelector.SelectFile(TACReader.FileType.MODEL, sm.AddComponent<ShenmueModel>());
+            TACFileSelector.SelectFile(TACReader.FileType.MODEL, sm.AddComponent<ShenmueModel>().m_assetRef);
         }
 #endif
+        public static ShenmueModel Create(string path, Transform parent)
+        {
+            var sm = new GameObject(path).AddComponent<ShenmueModel>();
+            sm.transform.parent = parent;
+            sm.transform.localPosition = Vector3.zero;
+            sm.transform.localEulerAngles = Vector3.zero;
+            sm.m_assetRef.m_path = path;
+            sm.OnChange();
+
+            return sm;
+        }
 
         private void Awake()
         {
             LoadModel();
         }
 
-        public override void OnChange()
+        public void OnChange()
         {
             LoadModel();
         }
@@ -49,7 +63,7 @@ namespace Shenmunity
 
         void LoadModel()
         {
-            if (m_pathCreated != m_path)
+            if (m_pathCreated != m_assetRef.m_path)
             {
                 var children = new Transform[transform.childCount];
                 for (int i = 0; i < children.Length; i++)
@@ -62,12 +76,17 @@ namespace Shenmunity
                     DestroyImmediate(child.gameObject);
                 }
             }
-            m_pathCreated = m_path;
+            m_pathCreated = m_assetRef.m_path;
 
-            if (string.IsNullOrEmpty(m_path))
+            if (string.IsNullOrEmpty(m_assetRef.m_path))
                 return;
 
-            var model = new MT5(m_path);
+            MT5 model;
+            uint len;
+            using (var br = TACReader.GetBytes(m_assetRef.m_path, out len))
+            {
+                model = new MT5(br);
+            }
 
             var nodes = new Dictionary<uint, Transform>();
 
@@ -520,7 +539,7 @@ namespace Shenmunity
         {
             var smar = (ShenmueModel)target;
 
-            smar.DoInspectorGUI(TACReader.FileType.MODEL);
+            smar.m_assetRef.DoInspectorGUI(TACReader.FileType.MODEL, smar.OnChange);
 
             if(GUILayout.Button("Create Avatar"))
             {

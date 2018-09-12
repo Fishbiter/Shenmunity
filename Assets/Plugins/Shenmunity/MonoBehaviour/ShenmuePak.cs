@@ -10,16 +10,18 @@ namespace Shenmunity
 {
     [ExecuteInEditMode]
     [SelectionBase]
-    public class ShenmuePak : ShenmueAssetRef
+    public class ShenmuePak : MonoBehaviour
     {
         [SerializeField]
         [HideInInspector]
         ShenmueModel[] m_models;
 
         [HideInInspector]
-        public ShenmueAssetRef m_textureSet;
+        public ShenmueAssetRef m_pakRef = new ShenmueAssetRef();
+        [HideInInspector]
+        public ShenmueAssetRef m_textureSet = new ShenmueAssetRef();
 
-        public override void OnChange()
+        public void OnChange()
         {
             if (m_models != null)
             {
@@ -30,13 +32,13 @@ namespace Shenmunity
                 m_models = null;
             }
 
-            if (string.IsNullOrEmpty(m_path))
+            if (string.IsNullOrEmpty(m_pakRef.m_path))
             {
                 return;
             }
 
             var models = TACReader.GetFiles(TACReader.FileType.MODEL);
-            var parent = TACReader.GetEntry(m_path);
+            var parent = TACReader.GetEntry(m_pakRef.m_path);
 
             if(!string.IsNullOrEmpty(m_textureSet.m_path))
             {
@@ -49,12 +51,7 @@ namespace Shenmunity
             {
                 if(m.m_parent == parent)
                 {
-                    var sm = new GameObject(m.m_path).AddComponent<ShenmueModel>();
-                    sm.transform.parent = transform;
-                    sm.m_path = m.m_path;
-                    sm.OnChange();
-
-                    createdModels.Add(sm);
+                    createdModels.Add(ShenmueModel.Create(m.m_path, transform));
                 }
             }
 
@@ -73,13 +70,11 @@ namespace Shenmunity
         {
             var smar = (ShenmuePak)target;
 
-            smar.DoInspectorGUI(TACReader.FileType.PAKS);
+            GUILayout.Label("PAKS");
+            smar.m_pakRef.DoInspectorGUI(TACReader.FileType.PAKS, smar.OnChange);
 
-            if(!smar.m_textureSet)
-            {
-                smar.m_textureSet = smar.gameObject.AddComponent<ShenmueAssetRef>();
-            }
-            smar.m_textureSet.DoInspectorGUI(TACReader.FileType.PAKF);
+            GUILayout.Label("PAKF");
+            smar.m_textureSet.DoInspectorGUI(TACReader.FileType.PAKF, smar.OnChange);
 
             DrawDefaultInspector();
         }

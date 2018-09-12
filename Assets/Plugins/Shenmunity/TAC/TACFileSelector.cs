@@ -27,9 +27,15 @@ namespace Shenmunity
 
         static public void SelectFile(TACReader.FileType type, ShenmueAssetRef outRef)
         {
-            // Get existing open window or if none, make a new one:
+            ShowList(outRef, TACReader.GetFiles(type));
+        }
+
+        static public void ShowList(ShenmueAssetRef outRef, List<TACReader.TACEntry> list)
+        {
+            m_list = list;
+            SortList();
+
             TACFileSelector window = (TACFileSelector)EditorWindow.GetWindow(typeof(TACFileSelector));
-            window.ListFiles(type);
             m_ref = outRef;
             window.Show();
         }
@@ -56,12 +62,6 @@ namespace Shenmunity
                 outRef.m_path = files[files.Count-1].m_path;
             }
             outRef.OnChange();
-        }
-
-        void ListFiles(TACReader.FileType type)
-        {
-            m_list = TACReader.GetFiles(type);
-            SortList();
         }
 
         void OnGUI()

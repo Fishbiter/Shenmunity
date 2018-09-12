@@ -27,6 +27,8 @@ namespace Shenmunity
             SND,
             PVR,
             PAWN,
+            CHRT,
+            SCN3,
 
             COUNT
         }
@@ -49,6 +51,8 @@ namespace Shenmunity
             new string[] { "DTPK" },//SND
             new string[] { "GBIX", "TEXN" },//PVR
             new string[] { "PAWN" },//PAWN
+            new string[] { "CHRT" },
+            new string[] { "SCN3" },
         };
 
         public struct TextureEntry
@@ -65,10 +69,13 @@ namespace Shenmunity
             public string m_path;
             public string m_name;
             public string m_type;
+            public FileType m_fileType;
             public uint m_offset;
             public uint m_length;
             public bool m_zipped;
             public TACEntry m_parent;
+
+            public List<TACEntry> m_children;
         }
 
         static Dictionary<string, string> s_sources = new Dictionary<string, string>
@@ -83,6 +90,7 @@ namespace Shenmunity
         static Dictionary<string, string> m_tacToFilename = new Dictionary<string, string>();
         static Dictionary<FileType, List<TACEntry>> m_byType;
         static Dictionary<string, int> m_unknownTypes;
+        static Dictionary<string, List<TACEntry>> m_modelToTAC = new Dictionary<string, List<TACEntry>>();
 
 
         static public List<TACEntry> GetFiles(FileType type)
@@ -215,32 +223,36 @@ namespace Shenmunity
 
         static BinaryReader GetBytes(string file, TACEntry e, out uint length)
         {
+            return new BinaryReader(new DebugStream(GetStream(file, e, out length)));
+        }
+
+        static Stream GetStream(string file, TACEntry e, out uint length)
+        { 
             if(e.m_parent != null && e.m_parent.m_zipped)
             {
-                var parent = GetBytes(file, e.m_parent, out length);
-                parent.BaseStream.Seek(e.m_offset, SeekOrigin.Begin);
-                return parent;
+                var parent = GetStream(file, e.m_parent, out length);
+                return new SubStream(parent, e.m_offset, e.m_length);
             }
             else
             {
-                var br = new BinaryReader(new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.Read));
-                br.BaseStream.Seek((e.m_parent != null ? e.m_parent.m_offset : 0) + e.m_offset, SeekOrigin.Begin);
+                Stream stream = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.Read);
+                stream = new SubStream(stream, e.m_offset, e.m_length);
                 length = e.m_length;
 
                 if(e.m_zipped)
                 {
-                    br.BaseStream.Seek(e.m_offset + e.m_length - 4, SeekOrigin.Begin);
-                    length = br.ReadUInt32();
-                    br.BaseStream.Seek(e.m_offset, SeekOrigin.Begin);
+                    stream.Seek(-4, SeekOrigin.End);
+                    length = new BinaryReader(stream).ReadUInt32();
+                    stream.Seek(0, SeekOrigin.Begin);
 
-                    var gzip = new GZipStream(br.BaseStream, CompressionMode.Decompress);
+                    var gzip = new GZipStream(stream, CompressionMode.Decompress);
                     byte[] bytes = new byte[length];
                     gzip.Read(bytes, 0, (int)length);
-                    
-                    br = new BinaryReader(new MemoryStream(bytes));
+
+                    stream = new MemoryStream(bytes);
                 }
 
-                return br;
+                return stream;
             }
         }
 
@@ -385,6 +397,7 @@ namespace Shenmunity
                     {
                         GetFiles((FileType)i).Add(e);
                         e.m_name = type;
+                        e.m_fileType = (FileType)i;
                         return;
                     }
                 }
@@ -454,6 +467,8 @@ namespace Shenmunity
         {
             var parentHash = parent.m_path.Split('/')[2];
 
+            long basePos = r.BaseStream.Position;
+
             string magic = Encoding.ASCII.GetString(r.ReadBytes(4));
             if (magic != "IPAC")
             {
@@ -464,6 +479,8 @@ namespace Shenmunity
             uint size2 = r.ReadUInt32();
 
             r.BaseStream.Seek(size1 - 16, SeekOrigin.Current);
+
+            parent.m_children = new List<TACEntry>();
 
             for (int i = 0; i < num; i++)
             {
@@ -476,7 +493,11 @@ namespace Shenmunity
 
                 newE.m_path = parent.m_path + "_" + fn;
                 newE.m_name = fn + "." + ext;
-                newE.m_offset = ofs + 16;
+                newE.m_offset = (uint)(ofs + basePos);
+                if (!parent.m_zipped)
+                {
+                    newE.m_offset -= parent.m_offset;
+                }
                 newE.m_length = length;
                 newE.m_parent = parent;
                 newE.m_type = ext;
@@ -492,7 +513,19 @@ namespace Shenmunity
                 }
 
                 m_files[tac].Add(hash, newE);
+                parent.m_children.Add(newE);
                 AddEntryToType(ext, newE);
+
+                if (newE.m_fileType == FileType.MODEL)
+                {
+                    if (!m_modelToTAC.ContainsKey(fn))
+                    {
+                        m_modelToTAC[fn] = new List<TACEntry>();
+                    }
+                    m_modelToTAC[fn].Add(parent);
+                }
+
+                //ExtractFile(newE);
             }
         }
 
@@ -503,6 +536,32 @@ namespace Shenmunity
             var br = GetBytes(e.m_file.m_path, out len);
             br.BaseStream.Seek(e.m_postion, SeekOrigin.Current);
             return br;
+        }
+
+        //AFAICT pakf->paks joining is probably done by filename. Since we don't have filenames (curse you TAC) just find PAKS that contain the entities we're after...
+        static public List<TACEntry> GetPAKSCandidates(IEnumerable<string> models)
+        {
+            List<TACEntry> candidates = null;
+            foreach (var model in models)
+            {
+                if (!m_modelToTAC.ContainsKey(model))
+                    continue;
+
+                var list = m_modelToTAC[model];
+                if (candidates == null)
+                {
+                    candidates = list.ToList();
+                }
+                else
+                {
+                    candidates.RemoveAll(x => !list.Contains(x));
+                }
+                if (candidates.Count == 0)
+                {
+                    return candidates;
+                }
+            }
+            return candidates;
         }
     }
 }

@@ -91,6 +91,7 @@ namespace Shenmunity
         static Dictionary<FileType, List<TACEntry>> m_byType;
         static Dictionary<string, int> m_unknownTypes;
         static Dictionary<string, List<TACEntry>> m_modelToTAC = new Dictionary<string, List<TACEntry>>();
+        static Dictionary<TACEntry, Byte[]> m_gzipCache = new Dictionary<TACEntry, Byte[]>();
 
 
         static public List<TACEntry> GetFiles(FileType type)
@@ -241,13 +242,24 @@ namespace Shenmunity
 
                 if(e.m_zipped)
                 {
-                    stream.Seek(-4, SeekOrigin.End);
-                    length = new BinaryReader(stream).ReadUInt32();
-                    stream.Seek(0, SeekOrigin.Begin);
+                    byte[] bytes;
 
-                    var gzip = new GZipStream(stream, CompressionMode.Decompress);
-                    byte[] bytes = new byte[length];
-                    gzip.Read(bytes, 0, (int)length);
+                    if (m_gzipCache.ContainsKey(e))
+                    {
+                        bytes = m_gzipCache[e];
+                    }
+                    else
+                    {
+                        stream.Seek(-4, SeekOrigin.End);
+                        length = new BinaryReader(stream).ReadUInt32();
+                        stream.Seek(0, SeekOrigin.Begin);
+
+                        var gzip = new GZipStream(stream, CompressionMode.Decompress);
+                        bytes = new byte[length];
+                        gzip.Read(bytes, 0, (int)length);
+
+                        m_gzipCache[e] = bytes;
+                    }
 
                     stream = new MemoryStream(bytes);
                 }

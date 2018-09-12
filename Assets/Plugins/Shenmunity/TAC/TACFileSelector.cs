@@ -131,8 +131,8 @@ namespace Shenmunity
                 if (GUILayout.Button(string.Format("{0} {1} ({2}kb)", r.m_path, r.m_name, r.m_length/1000)))
                 {
                     m_ref.m_path = r.m_path;
-                    m_ref.OnChange();
                     Close();
+                    m_ref.OnChange();
                 }
                 
             }

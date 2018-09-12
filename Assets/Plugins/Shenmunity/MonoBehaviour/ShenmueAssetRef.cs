@@ -69,11 +69,10 @@ namespace Shenmunity
                     TACFileSelector.SwitchAsset(type, this, 1);
                 }
             }
-            OnChange = onchange;
-
-            if (OnChange != DoNothing && GUILayout.Button("Reload model"))
+            
+            if (onchange != DoNothing && GUILayout.Button("Reload model"))
             {
-                OnChange();
+                onchange();
             }
         }
 #endif

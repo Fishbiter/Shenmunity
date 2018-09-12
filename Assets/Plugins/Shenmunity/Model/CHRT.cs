@@ -46,10 +46,9 @@ namespace Shenmunity
                 while (reader.BaseStream.Position < endBlock)
                 {
                     var prop = ReadString();
-                    switch (prop)
+                    switch (prop.ToUpper())
                     {
                         case "DEFIMAGE":
-                        case "DefImage":
                             Expect(35, outS);
                             string id = ReadString();
                             uint unknown = m_reader.ReadUInt32();
@@ -61,7 +60,6 @@ namespace Shenmunity
 
                             break;
                         case "IMAGE":
-                        case "Image":
                             uint i1 = m_reader.ReadUInt32();
                             if(i1 == 25) //Model?
                             {
@@ -91,7 +89,6 @@ namespace Shenmunity
                             }
 
                             break;
-                        case "Character":
                         case "CHARACTER":
                             Expect(34, outS);
                             string ii = ReadString();
@@ -102,7 +99,6 @@ namespace Shenmunity
                             m_nodes.Add(node);
                             break;
                         case "POSITION":
-                        case "Position":
                             uint unk = m_reader.ReadUInt32(); //buffer?
                             float x = m_reader.ReadSingle();
                             float y = m_reader.ReadSingle();
@@ -111,7 +107,6 @@ namespace Shenmunity
                             outS.WriteLine(string.Format("{0}: {1}, {2}, {3}", prop, x, y, z));
                             break;
                         case "ANGLE":
-                        case "Angle":
                             float type = m_reader.ReadUInt32();
                             float rotx = 0, roty, rotz = 0;
                             if (type == 1)
@@ -127,20 +122,20 @@ namespace Shenmunity
                             node.m_eulerAngles = new Vector3(rotx, roty * ShenmueModel.SHENMUE_FLIP, rotz * ShenmueModel.SHENMUE_FLIP);
                             outS.WriteLine(string.Format("{0}: {1}, {2}", prop, rotx, roty, rotz));
                             break;
-                        case "Scale":
+                        case "SCALE":
                             float scx = m_reader.ReadSingle();
                             float scy = m_reader.ReadSingle();
                             float scz = m_reader.ReadSingle();
                             float scw = m_reader.ReadSingle();
                             outS.WriteLine(string.Format("{0}: {1}, {2}, {3}, {4}", prop, scx, scy, scz, scw));
                             break;
-                        case "Size":
+                        case "SIZE":
                             float sizex = m_reader.ReadSingle();
                             float sizey = m_reader.ReadSingle();
                             float sizez = m_reader.ReadSingle();
                             outS.WriteLine(string.Format("{0}: {1}, {2}", prop, sizex, sizey, sizez));
                             break;
-                        case "height":
+                        case "HEIGHT":
                             float hgtx = m_reader.ReadSingle();
                             float hgty = m_reader.ReadSingle();
                             float hgtz = m_reader.ReadSingle();
@@ -149,50 +144,44 @@ namespace Shenmunity
                             uint hgtp3 = m_reader.ReadUInt32();
                             outS.WriteLine(string.Format("{0}: {1}, {2}, {3}, {4}, {5}, {6}", prop, hgtx, hgty, hgtz, hgtp1, hgtp2, hgtp3));
                             break;
-                        case "Range":
+                        case "RANGE":
                             uint start = m_reader.ReadUInt32();
                             uint end = m_reader.ReadUInt32();
                             outS.WriteLine(string.Format("{0}: {1}, {2}", prop, start, end));
                             break;
-                        case "Object":
                         case "OBJECT":
                             uint obj = m_reader.ReadUInt32();
                             outS.WriteLine(string.Format("{0}: {1}", prop, obj));
                             break;
-                        case "Adjust":
+                        case "ADJUST":
                             uint adj = m_reader.ReadUInt32();
                             string adj2 = ReadString();
                             outS.WriteLine(string.Format("{0}: {1} {2}", prop, adj, adj2));
                             break;
-                        case "Disp":
                         case "DISP":
                             outS.WriteLine(string.Format("{0}", prop));
                             break;
-                        case "Sleep":
                         case "SLEEP":
                             outS.WriteLine(string.Format("{0}", prop));
                             break;
-                        case "Flags":
                         case "FLAGS":
                             uint flags = m_reader.ReadUInt32();
                             outS.WriteLine(string.Format("{0}: {1}", prop, flags));
                             break;
-                        case "ShadowOff":
+                        case "SHADOWOFF":
                             uint shadowOff = m_reader.ReadUInt32();
                             outS.WriteLine(string.Format("{0}: {1}", prop, shadowOff));
                             break;
-                        case "Shadow":
+                        case "SHADOW":
                             uint shadow = m_reader.ReadUInt32();
                             uint shadow2 = m_reader.ReadUInt32();
                             outS.WriteLine(string.Format("{0}: {1} {2}", prop, shadow, shadow2));
                             break;
-                        case "ColiOff":
                         case "COLIOFF":
                             uint coliOff = m_reader.ReadUInt32();
                             outS.WriteLine(string.Format("{0}: {1}", prop, coliOff));
                             break;
                         case "COLI":
-                        case "Coli":
                             uint coli = m_reader.ReadUInt32();
                             uint coli2 = m_reader.ReadUInt32();
                             outS.WriteLine(string.Format("{0}: {1} {2}", prop, coli, coli2));

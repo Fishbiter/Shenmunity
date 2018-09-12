@@ -2,6 +2,7 @@ using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
 using System;
+using System.Collections;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -17,6 +18,11 @@ namespace Shenmunity
         public ShenmueAssetRef m_paks = new ShenmueAssetRef();
 
 #if UNITY_EDITOR
+        private void Awake()
+        {
+            m_chrt.OnChange = () => ShenmueCHRTEditor.ShowCandidates(this);
+        }
+
         [MenuItem("GameObject/Shenmunity/Scene (CHRT)", priority = 10)]
         public static void Create()
         {
@@ -77,13 +83,40 @@ namespace Shenmunity
     [CustomEditor(typeof(ShenmueCHRT))]
     public class ShenmueCHRTEditor : Editor
     {
+        ShenmueCHRT m_showCandidates;
+
         void OnCHRTChange(ShenmueCHRT target)
         {
             target.m_paks.m_path = "";
+            m_showCandidates = target;
+        }
+
+        IEnumerator ShowCandidatesNext(ShenmueCHRT target)
+        {
+            yield return new WaitForEndOfFrame();
+            ShowCandidates(target);
+        }
+
+        public static void ShowCandidates(ShenmueCHRT smar)
+        {
+            smar.m_paks.OnChange = smar.OnChange;
+            CHRT chrt;
+            uint len;
+            using (var br = TACReader.GetBytes(smar.m_chrt.m_path, out len))
+            {
+                chrt = new CHRT(br);
+            }
+            TACFileSelector.ShowList(smar.m_paks, TACReader.GetPAKSCandidates(chrt.GetModelNames()));
         }
 
         public override void OnInspectorGUI()
         {
+            if(m_showCandidates != null)
+            {
+                ShowCandidates(m_showCandidates);
+                return;
+            }
+
             var smar = (ShenmueCHRT)target;
 
             smar.m_chrt.DoInspectorGUI(TACReader.FileType.CHRT, smar.OnChange, () => OnCHRTChange(smar));
@@ -93,14 +126,7 @@ namespace Shenmunity
                 smar.m_paks.DoHeader();
                 if (GUILayout.Button("Select PAKS"))
                 {
-                    smar.m_paks.OnChange = smar.OnChange;
-                    CHRT chrt;
-                    uint len;
-                    using (var br = TACReader.GetBytes(smar.m_chrt.m_path, out len))
-                    {
-                        chrt = new CHRT(br);
-                    }
-                    TACFileSelector.ShowList(smar.m_paks, TACReader.GetPAKSCandidates(chrt.GetModelNames()));
+                    ShowCandidates(smar);
                 }
             }
 

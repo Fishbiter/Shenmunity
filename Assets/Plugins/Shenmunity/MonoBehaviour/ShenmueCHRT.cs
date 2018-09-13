@@ -15,12 +15,17 @@ namespace Shenmunity
     {
         [HideInInspector]
         public ShenmueAssetRef m_chrt = new ShenmueAssetRef();
+        [HideInInspector]
         public ShenmueAssetRef m_paks = new ShenmueAssetRef();
+
+        [HideInInspector]
+        [SerializeField]
+        List<ShenmueModel> m_models = new List<ShenmueModel>();
 
 #if UNITY_EDITOR
         private void Awake()
         {
-            m_chrt.OnChange = () => ShenmueCHRTEditor.ShowCandidates(this);
+            m_chrt.OnChange = () => ShenmueCHRTEditor.OnCHRTChange(this);
         }
 
         [MenuItem("GameObject/Shenmunity/Scene (CHRT)", priority = 10)]
@@ -33,6 +38,15 @@ namespace Shenmunity
 
         public void OnChange()
         {
+            if (m_models != null)
+            {
+                foreach (var m in m_models)
+                {
+                    DestroyImmediate(m.gameObject);
+                }
+                m_models = null;
+            }
+
             if (string.IsNullOrEmpty(m_chrt.m_path) && string.IsNullOrEmpty(m_paks.m_path))
             {
                 return;
@@ -47,12 +61,14 @@ namespace Shenmunity
 
             TACReader.SetTextureNamespace(TACReader.GetEntry(m_chrt.m_path).m_parent.m_path);
 
+            m_models = new List<ShenmueModel>();
+
             var paks = TACReader.GetEntry(m_paks.m_path);
             foreach (var file in paks.m_children)
             {
                 if(file.m_type == "MAPM")
                 {
-                    ShenmueModel.Create(file.m_path, transform);
+                    m_models.Add(ShenmueModel.Create(file.m_path, transform));
                 }
             }
 
@@ -70,6 +86,8 @@ namespace Shenmunity
                         model.transform.Rotate(Vector3.forward, node.m_eulerAngles.z);
                         model.transform.Rotate(Vector3.up, node.m_eulerAngles.y);
                         model.transform.Rotate(Vector3.right, node.m_eulerAngles.x);
+
+                        m_models.Add(model);
                     }
                 }
             }
@@ -85,16 +103,26 @@ namespace Shenmunity
     {
         ShenmueCHRT m_showCandidates;
 
-        void OnCHRTChange(ShenmueCHRT target)
+        public static void OnCHRTChange(ShenmueCHRT target)
         {
             target.m_paks.m_path = "";
-            m_showCandidates = target;
-        }
-
-        IEnumerator ShowCandidatesNext(ShenmueCHRT target)
-        {
-            yield return new WaitForEndOfFrame();
-            ShowCandidates(target);
+            target.m_paks.OnChange = target.OnChange;
+            CHRT chrt;
+            uint len;
+            using (var br = TACReader.GetBytes(target.m_chrt.m_path, out len))
+            {
+                chrt = new CHRT(br);
+            }
+            var cands = TACReader.GetPAKSCandidates(chrt.GetModelNames());
+            if (cands.Count > 0)
+            {
+                target.m_paks.m_path = cands[0].m_path;
+                target.OnChange();
+            }
+            else
+            {
+                ShowCandidates(target);
+            }
         }
 
         public static void ShowCandidates(ShenmueCHRT smar)
@@ -114,6 +142,7 @@ namespace Shenmunity
             if(m_showCandidates != null)
             {
                 ShowCandidates(m_showCandidates);
+                m_showCandidates = null;
                 return;
             }
 
@@ -123,6 +152,7 @@ namespace Shenmunity
 
             if(!string.IsNullOrEmpty(smar.m_chrt.m_path))
             {
+                smar.m_paks.OnChange = smar.OnChange;
                 smar.m_paks.DoHeader();
                 if (GUILayout.Button("Select PAKS"))
                 {

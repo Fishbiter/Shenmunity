@@ -566,11 +566,12 @@ namespace Shenmunity
                 }
                 else
                 {
+                    var oldList = candidates.ToList();
                     candidates.RemoveAll(x => !list.Contains(x));
-                }
-                if (candidates.Count == 0)
-                {
-                    return candidates;
+                    if (candidates.Count == 0)
+                    {
+                        candidates = oldList; //if we're discarding our last chance... don't
+                    }
                 }
             }
             return candidates;

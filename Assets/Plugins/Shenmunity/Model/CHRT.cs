@@ -32,9 +32,10 @@ namespace Shenmunity
         {
             m_reader = reader;
 
-            if (Encoding.ASCII.GetString(reader.ReadBytes(4)) != "CHRS")
+            var magic = Encoding.ASCII.GetString(reader.ReadBytes(4));
+            if (magic != "CHRS")
             {
-                throw new DecoderFallbackException("Expected CHRS");
+                throw new DecoderFallbackException(string.Format("Expected CHRS got {0}", magic));
             }
 
             long endBlock = reader.BaseStream.Position + reader.ReadUInt32() - 4;
@@ -66,6 +67,7 @@ namespace Shenmunity
                                 float i2 = m_reader.ReadSingle();
                                 string model = ReadString();
                                 outS.WriteLine(string.Format("{0}: {1} {2} {3}", prop, i1, i2, model));
+                                model = model.TrimStart('$');
                                 node.m_model = Path.GetFileNameWithoutExtension(model);
                             }
                             else if(i1 == 3)

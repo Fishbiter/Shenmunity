@@ -10,7 +10,7 @@ namespace Shenmunity
         static List<TACReader.TACEntry> m_list;
         static ShenmueAssetRef m_ref;
         static Vector2 m_scroll;
-        static bool m_showNamed;
+        static bool m_showPaths;
         static string m_search;
         static int m_offset;
 
@@ -33,6 +33,7 @@ namespace Shenmunity
         static public void ShowList(ShenmueAssetRef outRef, List<TACReader.TACEntry> list)
         {
             m_list = list;
+            m_offset = 0;
             SortList();
 
             TACFileSelector window = (TACFileSelector)EditorWindow.GetWindow(typeof(TACFileSelector));
@@ -72,7 +73,7 @@ namespace Shenmunity
                 return;
             }
 
-            m_showNamed = GUILayout.Toggle(m_showNamed, "Only show named");
+            m_showPaths = GUILayout.Toggle(m_showPaths, "Show paths");
             m_search = GUILayout.TextField(m_search);
 
             using (new GUILayout.HorizontalScope())
@@ -108,9 +109,6 @@ namespace Shenmunity
 
             foreach (var r in m_list)
             {
-                if (m_showNamed && string.IsNullOrEmpty(r.m_name))
-                    continue;
-                 
                 if (!string.IsNullOrEmpty(m_search) && (string.IsNullOrEmpty(r.m_name) || r.m_name.IndexOf(m_search, System.StringComparison.OrdinalIgnoreCase) == -1))
                     continue;
 
@@ -128,7 +126,11 @@ namespace Shenmunity
                 if (index++ < m_offset)
                     continue;
 
-                if (GUILayout.Button(string.Format("{0} {1} ({2}kb)", r.m_path, r.m_name, r.m_length/1000)))
+                string name = (r.m_parent != null ? r.m_parent.m_name + "/" : "") + r.m_name;
+                if (m_showPaths)
+                    name = (m_showPaths ? r.m_path + " " : "") + name;
+
+                if (GUILayout.Button(string.Format("{0} ({1}kb)", name, r.m_length/1000)))
                 {
                     m_ref.m_path = r.m_path;
                     Close();

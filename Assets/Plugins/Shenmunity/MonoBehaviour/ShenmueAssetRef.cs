@@ -28,13 +28,18 @@ namespace Shenmunity
         {
             if (!string.IsNullOrEmpty(m_path))
             {
+                GUILayout.Label(m_path);
                 using (new GUILayout.HorizontalScope())
                 {
-                    GUILayout.Label(m_path);
                     var entry = TACReader.GetEntry(m_path);
                     if (entry != null)
                     {
-                        var name = EditorGUILayout.DelayedTextField("TAG", entry.m_name);
+                        if(entry.m_parent != null)
+                        {
+                            GUILayout.Label(entry.m_parent.m_name+"/");
+                        }
+
+                        var name = EditorGUILayout.DelayedTextField("", entry.m_name);
                         if (name != entry.m_name)
                         {
                             entry.m_name = name;

@@ -75,24 +75,45 @@ namespace Shenmunity
             foreach (var node in chrt.m_nodes)
             {
                 var fileName = paks.m_path + "_" + node.m_model;
+                bool found = false;
                 foreach (var file in paks.m_children)
                 {
                     if (file.m_path == fileName)
                     {
-                        var model = ShenmueModel.Create(file.m_path, transform);
-                        model.name = node.m_id + " (" + node.m_image + " : " + model.name + ")";
-                        model.transform.localPosition = node.m_position;
-                        model.transform.localEulerAngles = new Vector3(0, 0, 0);
-                        model.transform.Rotate(Vector3.forward, node.m_eulerAngles.z);
-                        model.transform.Rotate(Vector3.up, node.m_eulerAngles.y);
-                        model.transform.Rotate(Vector3.right, node.m_eulerAngles.x);
-
-                        m_models.Add(model);
+                        m_models.Add(CreateModelForNode(file.m_path, node));
+                        found = true;
+                        break;
+                    }
+                }
+                if(!found)
+                {
+                    var fallback = TACReader.GetAnyPAK(node.m_model);
+                    if(fallback != null)
+                    {
+                        Debug.LogFormat("Got {0} from a different PAK ({1})", fileName, fallback.m_path);
+                        m_models.Add(CreateModelForNode(fallback.m_path + "_" + node.m_model, node));
+                    }
+                    else
+                    {
+                        Debug.LogFormat("Missing model {0}", fileName);
                     }
                 }
             }
 
             TACReader.SetTextureNamespace("");
+        }
+
+        ShenmueModel CreateModelForNode(string pak, CHRTNode node)
+        {
+            var model = ShenmueModel.Create(pak, transform);
+            model.name = node.m_id + " (" + node.m_image + " : " + model.name + ")";
+            model.transform.localPosition = node.m_position;
+            model.transform.localEulerAngles = new Vector3(0, 0, 0);
+            model.transform.Rotate(Vector3.forward, node.m_eulerAngles.z);
+            model.transform.Rotate(Vector3.up, node.m_eulerAngles.y);
+            model.transform.Rotate(Vector3.right, node.m_eulerAngles.x);
+
+            return model;
         }
     }
 

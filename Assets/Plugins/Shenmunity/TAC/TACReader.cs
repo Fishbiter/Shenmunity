@@ -215,23 +215,23 @@ namespace Shenmunity
             }
         }
 
-        static public BinaryReader GetBytes(string path, out uint length)
+        static public BinaryReader GetBytes(string path, out uint length, bool unzip = false)
         {
             GetFiles();
 
-            return GetBytes(GetTAC(path), GetEntry(path), out length);
+            return GetBytes(GetTAC(path), GetEntry(path), out length, unzip);
         }
 
-        static BinaryReader GetBytes(string file, TACEntry e, out uint length)
+        static BinaryReader GetBytes(string file, TACEntry e, out uint length, bool unzip = false)
         {
-            return new BinaryReader(new DebugStream(GetStream(file, e, out length)));
+            return new BinaryReader(new DebugStream(GetStream(file, e, out length, unzip)));
         }
 
-        static Stream GetStream(string file, TACEntry e, out uint length)
+        static Stream GetStream(string file, TACEntry e, out uint length, bool unzip)
         { 
             if(e.m_parent != null && e.m_parent.m_zipped)
             {
-                var parent = GetStream(file, e.m_parent, out length);
+                var parent = GetStream(file, e.m_parent, out length, unzip);
                 return new SubStream(parent, e.m_offset, e.m_length);
             }
             else
@@ -240,7 +240,7 @@ namespace Shenmunity
                 stream = new SubStream(stream, e.m_offset, e.m_length);
                 length = e.m_length;
 
-                if(e.m_zipped)
+                if(e.m_zipped && unzip)
                 {
                     byte[] bytes;
 
@@ -345,12 +345,13 @@ namespace Shenmunity
             return m_files;
         }
         
-        static public void ExtractFile(TACEntry entry)
+        static public void ExtractFile(TACEntry entry, bool unzip = true)
         {
             uint len;
-            var br = GetBytes(entry.m_path, out len);
+            var br = GetBytes(entry.m_path, out len, unzip);
             var path = Directory.GetCurrentDirectory();
             path += "/" + entry.m_path + "." + entry.m_type;
+            
             Directory.CreateDirectory(Path.GetDirectoryName(path));
             File.WriteAllBytes(path, br.ReadBytes((int)len));
         }
@@ -408,7 +409,6 @@ namespace Shenmunity
                     if (string.Compare(id, 0, type, 0, id.Length) == 0)
                     {
                         GetFiles((FileType)i).Add(e);
-                        e.m_name = type;
                         e.m_fileType = (FileType)i;
                         return;
                     }
@@ -575,6 +575,15 @@ namespace Shenmunity
                 }
             }
             return candidates;
+        }
+
+        public static TACEntry GetAnyPAK(string model)
+        {
+            if(m_modelToTAC.ContainsKey(model))
+            {
+                return m_modelToTAC[model][0];
+            }
+            return null;
         }
     }
 }

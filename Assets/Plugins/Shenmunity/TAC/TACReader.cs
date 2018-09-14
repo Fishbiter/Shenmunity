@@ -215,14 +215,14 @@ namespace Shenmunity
             }
         }
 
-        static public BinaryReader GetBytes(string path, out uint length, bool unzip = false)
+        static public BinaryReader GetBytes(string path, out uint length, bool unzip = true)
         {
             GetFiles();
 
             return GetBytes(GetTAC(path), GetEntry(path), out length, unzip);
         }
 
-        static BinaryReader GetBytes(string file, TACEntry e, out uint length, bool unzip = false)
+        static BinaryReader GetBytes(string file, TACEntry e, out uint length, bool unzip = true)
         {
             return new BinaryReader(new DebugStream(GetStream(file, e, out length, unzip)));
         }
@@ -247,6 +247,7 @@ namespace Shenmunity
                     if (m_gzipCache.ContainsKey(e))
                     {
                         bytes = m_gzipCache[e];
+                        length = (uint)bytes.Length;
                     }
                     else
                     {

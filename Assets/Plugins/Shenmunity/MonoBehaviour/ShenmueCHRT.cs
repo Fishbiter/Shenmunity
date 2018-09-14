@@ -74,6 +74,9 @@ namespace Shenmunity
 
             foreach (var node in chrt.m_nodes)
             {
+                if (node.m_model == null)
+                    continue;
+
                 var fileName = paks.m_path + "_" + node.m_model;
                 bool found = false;
                 foreach (var file in paks.m_children)

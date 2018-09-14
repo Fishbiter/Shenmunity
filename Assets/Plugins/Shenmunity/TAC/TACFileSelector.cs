@@ -109,7 +109,9 @@ namespace Shenmunity
 
             foreach (var r in m_list)
             {
-                if (!string.IsNullOrEmpty(m_search) && (string.IsNullOrEmpty(r.m_name) || r.m_name.IndexOf(m_search, System.StringComparison.OrdinalIgnoreCase) == -1))
+                string name = (r.m_parent != null ? r.m_parent.m_name + "/" : "") + r.m_name;
+
+                if (!string.IsNullOrEmpty(m_search) && (string.IsNullOrEmpty(name) || name.IndexOf(m_search, System.StringComparison.OrdinalIgnoreCase) == -1))
                     continue;
 
                 none = false;
@@ -126,7 +128,6 @@ namespace Shenmunity
                 if (index++ < m_offset)
                     continue;
 
-                string name = (r.m_parent != null ? r.m_parent.m_name + "/" : "") + r.m_name;
                 if (m_showPaths)
                     name = (m_showPaths ? r.m_path + " " : "") + name;
 

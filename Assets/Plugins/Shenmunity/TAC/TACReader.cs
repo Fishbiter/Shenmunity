@@ -87,10 +87,10 @@ namespace Shenmunity
         static string s_namesFile = "Assets/Plugins/Shenmunity/Names.txt";
 
         static Dictionary<string, Dictionary<string, TACEntry>> m_files;
-        static Dictionary<string, string> m_tacToFilename = new Dictionary<string, string>();
+        static Dictionary<string, string> m_tacToFilename = new Dictionary<string, string>(StringComparer.InvariantCultureIgnoreCase);
         static Dictionary<FileType, List<TACEntry>> m_byType;
         static Dictionary<string, int> m_unknownTypes;
-        static Dictionary<string, List<TACEntry>> m_modelToTAC = new Dictionary<string, List<TACEntry>>();
+        static Dictionary<string, List<TACEntry>> m_modelToTAC = new Dictionary<string, List<TACEntry>>(StringComparer.InvariantCultureIgnoreCase);
         static Dictionary<TACEntry, Byte[]> m_gzipCache = new Dictionary<TACEntry, Byte[]>();
 
 
@@ -274,7 +274,7 @@ namespace Shenmunity
         {
             FindShenmue();
 
-            m_files = new Dictionary<string, Dictionary<string, TACEntry>>();
+            m_files = new Dictionary<string, Dictionary<string, TACEntry>>(StringComparer.InvariantCultureIgnoreCase);
 
             foreach(var s in s_sources)
             {
@@ -303,7 +303,7 @@ namespace Shenmunity
             //Load tad file
             string tadFile = Path.ChangeExtension(tac, ".tad");
 
-            var dir = new Dictionary<string, TACEntry>();
+            var dir = new Dictionary<string, TACEntry>(StringComparer.InvariantCultureIgnoreCase);
 
             string tacName = Path.GetFileNameWithoutExtension(tadFile);
             tacName = shortForm + "/" + tacName.Substring(0, tacName.IndexOf("_")); //remove hash (these change per release)
@@ -351,8 +351,8 @@ namespace Shenmunity
             uint len;
             var br = GetBytes(entry.m_path, out len, unzip);
             var path = Directory.GetCurrentDirectory();
-            path += "/" + entry.m_path + "." + entry.m_type;
-            
+            path += "/" + entry.m_path + "." + String.Join("_", entry.m_type.Split(Path.GetInvalidFileNameChars(), StringSplitOptions.RemoveEmptyEntries));
+
             Directory.CreateDirectory(Path.GetDirectoryName(path));
             File.WriteAllBytes(path, br.ReadBytes((int)len));
         }
@@ -411,6 +411,7 @@ namespace Shenmunity
                     {
                         GetFiles((FileType)i).Add(e);
                         e.m_fileType = (FileType)i;
+
                         return;
                     }
                 }

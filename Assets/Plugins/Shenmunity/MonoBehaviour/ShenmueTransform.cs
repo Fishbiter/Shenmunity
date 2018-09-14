@@ -26,8 +26,19 @@ namespace Shenmunity
         [HideInInspector]
         Collider m_collider;
 
+        [SerializeField]
+        [HideInInspector]
+        CollisionType m_currentColliderType;
+
         public void GenerateCollider(MT5.Node node)
         {
+            if(m_currentColliderType == m_collisionType)
+            {
+                return;
+            }
+            m_currentColliderType = m_collisionType;
+
+
             if (m_collider)
             {
                 DestroyImmediate(m_collider);

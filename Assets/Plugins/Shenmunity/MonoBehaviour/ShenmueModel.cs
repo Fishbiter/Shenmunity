@@ -533,6 +533,7 @@ namespace Shenmunity
 
 #if UNITY_EDITOR
     [CustomEditor(typeof(ShenmueModel))]
+    [CanEditMultipleObjects]
     public class ShenmueModelEditor : Editor
     {
         public override void OnInspectorGUI()
@@ -553,6 +554,18 @@ namespace Shenmunity
                     if(st.m_generateGeometry)
                     {
                         st.m_collisionType = ShenmueTransform.CollisionType.Mesh;
+                    }
+                }
+                smar.OnChange();
+            }
+
+            if (GUILayout.Button("Set Box Collider for all visible nodes"))
+            {
+                foreach (var st in smar.GetComponentsInChildren<ShenmueTransform>())
+                {
+                    if (st.m_generateGeometry)
+                    {
+                        st.m_collisionType = ShenmueTransform.CollisionType.Box;
                     }
                 }
                 smar.OnChange();

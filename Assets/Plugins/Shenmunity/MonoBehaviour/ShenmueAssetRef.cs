@@ -74,7 +74,13 @@ namespace Shenmunity
                     TACFileSelector.SwitchAsset(type, this, 1);
                 }
             }
-            
+
+            if (!string.IsNullOrEmpty(m_path) && GUILayout.Button("Extract File"))
+            {
+                TACReader.ExtractFile(TACReader.GetEntry(m_path));
+            }
+
+
             if (onchange != DoNothing && GUILayout.Button("Reload model"))
             {
                 onchange();

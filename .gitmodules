@@ -1,0 +1,3 @@
+[submodule "Assets/Plugins/Shenmunity"]
+	path = Assets/Plugins/Shenmunity
+	url = https://github.com/Fishbiter/Shenmunity_plugin.git

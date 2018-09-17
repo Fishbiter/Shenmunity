@@ -75,6 +75,8 @@ The character should be put in T-Pose.
 
 Finally, click "Create Avatar" on the Shenmue model and it should create an Animator component with an avatar. Watch the console for errors. If the transforms pop back you'll probably need to delete the Animator component and start again.
 
+See the AvatarExample scene for an example.
+
 (Hopefully some of this can be automated in future.)
 
 # Adding Scenes
